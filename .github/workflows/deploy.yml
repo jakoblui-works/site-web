@@ -1,0 +1,45 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+      - run: pnpm install
+      - run: pnpm run lint
+      - run: pnpm run test
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Log in to ghcr.io
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push
+        run: |
+          docker build -t ghcr.io/jakoblui-works/site-web:${{ github.sha }} -t ghcr.io/jakoblui-works/site-web:latest .
+          docker push ghcr.io/jakoblui-works/site-web:${{ github.sha }}
+          docker push ghcr.io/jakoblui-works/site-web:latest
+      - name: Trigger deploy
+        env:
+          GH_TOKEN: ${{ secrets.DEPLOY_REPO_DISPATCH_TOKEN }}
+        run: |
+          gh api repos/jakoblui-works/infra/dispatches -f event_type=deploy
