@@ -12,5 +12,6 @@
       "*": ["./*"]
     },
     "types": ["@testing-library/jest-dom/vitest"]
-  }
+  },
+  "exclude": ["eslint.config.ts", "vite.config.js", ".storybook"]
 }
