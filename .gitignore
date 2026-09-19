@@ -4,3 +4,5 @@ dist
 dist-ssr
 *.local
 routeTree.gen.ts
+*storybook.log
+storybook-static
