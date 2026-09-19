@@ -38,6 +38,29 @@ jobs:
           docker build -t ghcr.io/jakoblui-works/site-web:${{ github.sha }} -t ghcr.io/jakoblui-works/site-web:latest .
           docker push ghcr.io/jakoblui-works/site-web:${{ github.sha }}
           docker push ghcr.io/jakoblui-works/site-web:latest
+  build-storybook:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Log in to ghcr.io
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push
+        run: |
+          docker build -f Dockerfile.storybook -t ghcr.io/jakoblui-works/site-web-storybook:${{ github.sha }} -t ghcr.io/jakoblui-works/site-web-storybook:latest .
+          docker push ghcr.io/jakoblui-works/site-web-storybook:${{ github.sha }}
+          docker push ghcr.io/jakoblui-works/site-web-storybook:latest
+  trigger-deploy:
+    needs: [build, build-storybook]
+    runs-on: ubuntu-latest
+    steps:
       - name: Trigger deploy
         env:
           GH_TOKEN: ${{ secrets.DEPLOY_REPO_DISPATCH_TOKEN }}
