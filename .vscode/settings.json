@@ -10,5 +10,7 @@
   },
   "files.associations": {
     "*.css": "tailwindcss"
-  }
+  },
+  "typescript.suggest.autoImports": true,
+  "typescript.preferences.includePackageJsonAutoImports": "on"
 }
