@@ -1,15 +1,15 @@
-import { Button } from "@/components/ui/button";
 import { createFileRoute } from "@tanstack/react-router";
+
+import { Hero } from "@/components/hero";
+
+const HomeComponent = () => {
+  return (
+    <main>
+      <Hero />
+    </main>
+  );
+};
 
 export const Route = createFileRoute("/")({
   component: HomeComponent,
 });
-
-function HomeComponent() {
-  return (
-    <div className="p-2">
-      <h3>Welcome Home!</h3>
-      <Button>Test</Button>
-    </div>
-  );
-}
