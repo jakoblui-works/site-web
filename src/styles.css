@@ -353,3 +353,8 @@
     transition: none;
   }
 }
+
+/* The camera: zooming into a node moves and scales the graph (animated by `Xray`). */
+.xray-camera {
+  transform-origin: 0 0;
+}

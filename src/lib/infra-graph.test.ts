@@ -2,12 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import {
   edgeId,
+  edgeRoute,
+  segmentHitsRect,
   edges,
   landscapeLayout,
   nodes,
   portraitLayout,
   type GraphLayout,
-  type Point,
   type Rect,
 } from "./infra-graph";
 
@@ -30,31 +31,6 @@ const overlaps = (a: Rect, b: Rect) =>
   b.x < a.x + a.width &&
   a.y < b.y + b.height &&
   b.y < a.y + a.height;
-
-/** Whether the segment a→b passes through the rectangle (Liang–Barsky clipping). */
-const segmentHitsRect = (a: Point, b: Point, r: Rect) => {
-  const dx = b.x - a.x;
-  const dy = b.y - a.y;
-  let t0 = 0;
-  let t1 = 1;
-  const checks: [number, number][] = [
-    [-dx, a.x - r.x],
-    [dx, r.x + r.width - a.x],
-    [-dy, a.y - r.y],
-    [dy, r.y + r.height - a.y],
-  ];
-  for (const [p, q] of checks) {
-    if (p === 0) {
-      if (q < 0) return false;
-      continue;
-    }
-    const t = q / p;
-    if (p < 0) t0 = Math.max(t0, t);
-    else t1 = Math.min(t1, t);
-    if (t0 > t1) return false;
-  }
-  return true;
-};
 
 describe("infra graph data", () => {
   it("has unique node ids", () => {
@@ -111,16 +87,31 @@ describe.each(Object.entries(layouts))("%s layout", (_, layout) => {
     }
   });
 
-  it("doesn't run an edge through a node it doesn't connect", () => {
+  it("doesn't run an edge's route through a node it doesn't connect", () => {
     for (const edge of edges) {
-      const from = layout.positions[edge.from];
-      const to = layout.positions[edge.to];
+      const route = edgeRoute(layout, edge);
       for (const node of nodes) {
         if (node.id === edge.from || node.id === edge.to) continue;
+        for (const [i, point] of route.slice(1).entries()) {
+          expect(
+            segmentHitsRect(route[i], point, nodeBox(layout, node.id)),
+            `${edgeId(edge)} crosses ${node.id}`,
+          ).toBe(false);
+        }
+      }
+    }
+  });
+
+  it("routes every edge like a board trace: straight or at 45°", () => {
+    for (const edge of edges) {
+      const route = edgeRoute(layout, edge);
+      for (const [i, point] of route.slice(1).entries()) {
+        const dx = Math.abs(point.x - route[i].x);
+        const dy = Math.abs(point.y - route[i].y);
         expect(
-          segmentHitsRect(from, to, nodeBox(layout, node.id)),
-          `${edgeId(edge)} crosses ${node.id}`,
-        ).toBe(false);
+          dx === 0 || dy === 0 || Math.abs(dx - dy) < 1e-9,
+          `${edgeId(edge)} segment ${i}`,
+        ).toBe(true);
       }
     }
   });

@@ -6,8 +6,11 @@ import { Hero } from "@/components/hero";
 import { SiteHeader } from "@/components/site-header";
 import { Xray } from "@/components/xray";
 import { useXrayWindow } from "@/hooks/use-xray-window";
+import { nodeDetails } from "@/lib/node-details";
+import { traceGroups } from "@/lib/trace-groups";
 
-// `?xray` opens the interior. A bare `?xray` parses as an empty string, so "open" means present, not truthy.
+// `?xray` opens the interior, and `?xray=<node or trace group>` also zooms into it. A bare `?xray`
+// parses as an empty string, so "open" means present, not truthy; an unknown id shows the overview.
 const homeSearchSchema = z.object({
   xray: z.string().optional(),
 });
@@ -16,6 +19,10 @@ const HomeComponent = () => {
   const { xray } = Route.useSearch();
   const navigate = Route.useNavigate();
   const isOpen = xray !== undefined;
+  const selected =
+    xray && (xray in nodeDetails || traceGroups.some((group) => group.id === xray))
+      ? xray
+      : null;
 
   const surfaceRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLButtonElement>(null);
@@ -67,6 +74,10 @@ const HomeComponent = () => {
       {/* The interior: fixed at z-0, so it sits behind the surface. */}
       <Xray
         open={isOpen}
+        selected={selected}
+        onSelect={(id) =>
+          navigate({ search: { xray: id ?? "" }, resetScroll: false })
+        }
         onClose={() => navigate({ search: {}, resetScroll: false })}
       />
     </>
