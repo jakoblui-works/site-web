@@ -307,6 +307,16 @@
   padding: var(--xray-clear-y, 15vh) var(--xray-clear-x, 15vw);
 }
 
+/* The view switch (`ViewSwitch`) sits just above the clear area, below the header where the clear
+   area starts higher than that. */
+:root {
+  --xray-switch-top: max(
+    calc(var(--spacing-header) + 0.5rem),
+    calc(var(--xray-clear-y, 15vh) - 3rem)
+  );
+  --xray-switch-height: 2.5rem;
+}
+
 /* The look-inside panel leaves as soon as the x-ray opens, and comes back only once the surface is
    unmasked again: inside a masked parent its backdrop blur can't reach the interior, so fading it in
    earlier would make the blur snap on when the mask comes off. */
@@ -331,6 +341,18 @@
   padding: var(--xray-clear-y, 15vh) var(--xray-clear-x, 15vw);
   filter: brightness(0.9) saturate(0.85);
   transition: opacity 300ms ease;
+}
+
+/* Phones: the clear area starts behind the switch, so the graph is fitted below it (the interior
+   and its frosted copy alike). Wide screens have room for it above the clear area. */
+@media (width < 64rem) {
+  .xray-content,
+  .xray-frost-content {
+    padding-top: max(
+      var(--xray-clear-y, 15vh),
+      calc(var(--xray-switch-top) + var(--xray-switch-height) + 0.75rem)
+    );
+  }
 }
 
 /* The dot grid, on the interior's background: behind the graph, so the droplet's board and the

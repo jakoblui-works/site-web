@@ -11,7 +11,8 @@ type ViewSwitchProps = {
 
 /**
  * Switches the x-ray between its graphs. Part of the interior, just above the window's clear area
- * (below the header on phones), so it's seen through the surface like the graph is.
+ * (below the header on phones, where the graph is fitted below it; see `styles.css`), so it's seen
+ * through the surface like the graph is.
  */
 export const ViewSwitch = ({ value, onChange, inert, className }: ViewSwitchProps) => (
   <div
@@ -21,7 +22,7 @@ export const ViewSwitch = ({ value, onChange, inert, className }: ViewSwitchProp
       ? { role: "group", "aria-label": "View" }
       : { "aria-hidden": true })}
     className={cn(
-      "absolute top-[max(calc(var(--spacing-header)+0.5rem),calc(var(--xray-clear-y,15vh)-3rem))] left-1/2 z-10 flex -translate-x-1/2 gap-1 rounded-md border border-violet-300/25 bg-[oklch(0.13_0.045_292/0.85)] p-1 font-mono text-xs whitespace-nowrap",
+      "absolute top-(--xray-switch-top) left-1/2 z-10 flex h-(--xray-switch-height) -translate-x-1/2 gap-1 rounded-md border border-violet-300/25 bg-[oklch(0.13_0.045_292/0.85)] p-1 font-mono text-xs whitespace-nowrap",
       className,
     )}
   >
