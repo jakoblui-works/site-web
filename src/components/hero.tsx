@@ -65,8 +65,8 @@ export const Hero = ({
             </ul>
           </div>
           <p className="mt-6 max-w-xl text-lg leading-relaxed text-neutral-300">
-            I build products end to end, from interface to infrastructure, and
-            put as much care into deciding{" "}
+            I build products end to end, from interface to infrastructure. Half
+            the job is knowing{" "}
             <span className="font-medium text-primary">what not to build</span>.
           </p>
           <div className="mt-8 flex flex-wrap items-start gap-3">
