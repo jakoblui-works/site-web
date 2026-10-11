@@ -166,7 +166,8 @@ export const Xray = ({ open, selected, onSelect, onClose }: XrayProps) => {
       run(open.plan, open.t, 0, () => {
         current.current = null;
         setView(null);
-        [...document.querySelectorAll<SVGGElement>(`[data-node="${id}"]`)]
+        // In the interior only: the page's frosted glass draws a copy of the graph too.
+        [...(regionRef.current?.querySelectorAll<SVGGElement>(`[data-node="${id}"]`) ?? [])]
           .find((element) => element.getClientRects().length > 0)
           ?.focus({ preventScroll: true });
       });

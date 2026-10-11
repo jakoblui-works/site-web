@@ -5,7 +5,7 @@ import { projects } from "@/lib/projects";
 
 export const SiteHeader = () => {
   return (
-    <header className="h-header border-b bg-surface">
+    <header className="h-header border-b">
       <div className="mx-auto flex h-full w-full max-w-6xl items-center justify-between px-4">
         <Link
           to="/"

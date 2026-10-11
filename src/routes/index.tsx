@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import { z } from "zod";
 
 import { Hero } from "@/components/hero";
+import { FrostedGraph } from "@/components/frosted-graph";
 import { SiteHeader } from "@/components/site-header";
 import { Xray } from "@/components/xray";
 import { useXrayWindow } from "@/hooks/use-xray-window";
@@ -54,10 +55,14 @@ const HomeComponent = () => {
           className="xray-shadow xray-shadow-hole absolute inset-0 z-0"
         />
         <div className="xray-surface-content relative z-10">
+          {/* Frosted glass: a blurred copy of the interior, lined up with the real one, under black.
+              It's ordinary content, so the x-ray fades it like the rest of the surface. */}
           <div
             aria-hidden
             className="xray-hole xray-surface-bg absolute inset-0 -z-10"
-          />
+          >
+            <FrostedGraph />
+          </div>
           <SiteHeader />
           <main>
             <Hero

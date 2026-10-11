@@ -84,7 +84,7 @@ export const Decisions = ({ title, items }: { title: string; items: string[] }) 
       {items.map((item) => (
         <li
           key={item}
-          className="relative border-l-[1.5px] border-violet-300/50 pl-4 text-sm leading-relaxed text-neutral-300 before:absolute before:top-0 before:-left-[5px] before:size-2 before:rounded-full before:border-[1.5px] before:border-violet-300/70 before:bg-[oklch(0.13_0.045_292)]"
+          className="relative border-l-[1.5px] border-violet-300/50 pl-4 text-[13px] leading-relaxed text-neutral-300 before:absolute before:top-0 before:-left-[5px] before:size-2 before:rounded-full before:border-[1.5px] before:border-violet-300/70 before:bg-[oklch(0.13_0.045_292)]"
         >
           {item}
         </li>

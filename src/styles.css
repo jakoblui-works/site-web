@@ -278,6 +278,8 @@
 }
 .xray-shadow-hole {
   opacity: calc(1 - var(--xray-strength));
+  /* Only inside the hole: the surface around it is glass now, which it would darken. */
+  clip-path: inset(var(--hole-top) var(--hole-right) var(--hole-bottom) var(--hole-left));
   mask-image:
     linear-gradient(to bottom, black calc(var(--hole-top) + var(--hole-fade) * 0.3), transparent calc(var(--hole-top) + var(--hole-fade) * 1.25 + 28px)),
     linear-gradient(to top, black calc(var(--hole-bottom) + var(--hole-fade) * 0.2), transparent calc(var(--hole-bottom) + var(--hole-fade) * 1.1 + 10px)),
@@ -286,16 +288,23 @@
   mask-composite: add;
 }
 
-/* The surface's background: the page colour with the dot grid, which fades out towards the edges
-   (painted over by a vignette in the page colour, since the mask is taken by the hole). */
+/* The surface's background (behind the header and the hero): black frosted glass over the
+   interior. Not a backdrop blur (inside the masked surface it couldn't reach the interior while the
+   x-ray fades): it shows its own blurred, dimmed copy of the interior's graph, lined up with the
+   real one, so it fades with the surface like any other content. */
 .xray-surface-bg {
-  background-color: var(--background);
-  background-image:
-    radial-gradient(ellipse at center, transparent 40%, var(--background) 85%),
-    radial-gradient(color-mix(in oklch, var(--foreground) 18%, transparent) 1px, transparent 1px);
-  background-size:
-    100% 100%,
-    24px 24px;
+  background-color: oklch(0.06 0.015 292);
+  overflow: hidden;
+}
+.xray-frost {
+  /* The blur is baked into a canvas (`FrostedGraph`): a live CSS blur here showed hard seams. */
+  background-color: oklch(0.13 0.045 292);
+  opacity: 0.55;
+  pointer-events: none;
+}
+.xray-frost-content {
+  /* Fitted like `.xray-content`, so the copy lines up with the interior's graph. */
+  padding: var(--xray-clear-y, 15vh) var(--xray-clear-x, 15vw);
 }
 
 /* The look-inside panel leaves as soon as the x-ray opens, and comes back only once the surface is
@@ -322,6 +331,16 @@
   padding: var(--xray-clear-y, 15vh) var(--xray-clear-x, 15vw);
   filter: brightness(0.9) saturate(0.85);
   transition: opacity 300ms ease;
+}
+
+/* The dot grid, on the interior's background: behind the graph, so the droplet's board and the
+   nodes cover it. */
+.xray-interior {
+  background-image: radial-gradient(
+    color-mix(in oklch, var(--foreground) 16%, transparent) 1px,
+    transparent 1px
+  );
+  background-size: 24px 24px;
 }
 
 /* Fine grain on the interior's background: dithers the edge band's gradient over the dark

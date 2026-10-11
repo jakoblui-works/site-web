@@ -30,7 +30,8 @@ export const NodeInterior = ({
     <ZoomContent
       {...frame}
       titleId={titleId}
-      className="justify-center px-6 py-6 sm:px-8"
+      // A datasheet: all mono.
+      className="justify-center px-6 py-6 font-mono sm:px-8"
     >
       <ZoomHeader
         titleId={titleId}
@@ -39,7 +40,7 @@ export const NodeInterior = ({
 
       <div className="grid gap-7 @xl:grid-cols-[1fr_13rem]">
         <div className="flex flex-col gap-6">
-          <p className="text-base leading-relaxed text-neutral-100">
+          <p className="text-sm leading-[1.6] text-neutral-100">
             {details.summary}
           </p>
 
