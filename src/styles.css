@@ -174,3 +174,182 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
 }
+
+/* X-ray: the interior sits behind the page (fixed, underneath); the page itself, the surface, is
+   made see-through. Two masks, both as px insets relative to the surface (set by `useXrayWindow`):
+   - The window (--xray-*): a frosted-winter-window gradient, opaque at the screen's edges and
+     transparent inside; the four edge fades add up, so the band is thickest in the corners.
+     Its shape is fixed while it's in use: opening only turns its strength up.
+   - The hole (--hole-*): on wide screens, a hole in the surface's background under the
+     look-inside panel, so the interior shows through the glass while closed.
+   --xray-strength (0 solid, 1 see-through) is the only thing that animates. */
+@property --xray-strength {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+.xray-surface {
+  transition: --xray-strength 800ms ease-in-out;
+}
+.xray-surface[data-open] {
+  --xray-strength: 1;
+}
+
+/* The surface's content, while the x-ray is in use: the window, plus a uniform layer that is
+   opaque at strength 0 and gone at strength 1. The window's edge falls off along a smoothstep
+   curve, alpha = 1 - (3t^2 - 2t^3) across the fade (9 stops): gentle at both ends, so the surface
+   eases away from the edge and eases out into nothing, and text fades instead of cutting off.
+   The fade can differ across (--xray-fade-x) and down (--xray-fade-y).
+   Not masked while closed, so the glass panel's blur still reaches the interior behind it. */
+.xray-surface[data-masked] > .xray-surface-content {
+  mask-image:
+    linear-gradient(
+      to bottom,
+      black var(--xray-top),
+      rgb(0 0 0 / 0.957) calc(var(--xray-top) + var(--xray-fade-y) * 0.125),
+      rgb(0 0 0 / 0.844) calc(var(--xray-top) + var(--xray-fade-y) * 0.25),
+      rgb(0 0 0 / 0.684) calc(var(--xray-top) + var(--xray-fade-y) * 0.375),
+      rgb(0 0 0 / 0.500) calc(var(--xray-top) + var(--xray-fade-y) * 0.5),
+      rgb(0 0 0 / 0.316) calc(var(--xray-top) + var(--xray-fade-y) * 0.625),
+      rgb(0 0 0 / 0.156) calc(var(--xray-top) + var(--xray-fade-y) * 0.75),
+      rgb(0 0 0 / 0.043) calc(var(--xray-top) + var(--xray-fade-y) * 0.875),
+      transparent calc(var(--xray-top) + var(--xray-fade-y))
+    ),
+    linear-gradient(
+      to top,
+      black var(--xray-bottom),
+      rgb(0 0 0 / 0.957) calc(var(--xray-bottom) + var(--xray-fade-y) * 0.125),
+      rgb(0 0 0 / 0.844) calc(var(--xray-bottom) + var(--xray-fade-y) * 0.25),
+      rgb(0 0 0 / 0.684) calc(var(--xray-bottom) + var(--xray-fade-y) * 0.375),
+      rgb(0 0 0 / 0.500) calc(var(--xray-bottom) + var(--xray-fade-y) * 0.5),
+      rgb(0 0 0 / 0.316) calc(var(--xray-bottom) + var(--xray-fade-y) * 0.625),
+      rgb(0 0 0 / 0.156) calc(var(--xray-bottom) + var(--xray-fade-y) * 0.75),
+      rgb(0 0 0 / 0.043) calc(var(--xray-bottom) + var(--xray-fade-y) * 0.875),
+      transparent calc(var(--xray-bottom) + var(--xray-fade-y))
+    ),
+    linear-gradient(
+      to right,
+      black var(--xray-left),
+      rgb(0 0 0 / 0.957) calc(var(--xray-left) + var(--xray-fade-x) * 0.125),
+      rgb(0 0 0 / 0.844) calc(var(--xray-left) + var(--xray-fade-x) * 0.25),
+      rgb(0 0 0 / 0.684) calc(var(--xray-left) + var(--xray-fade-x) * 0.375),
+      rgb(0 0 0 / 0.500) calc(var(--xray-left) + var(--xray-fade-x) * 0.5),
+      rgb(0 0 0 / 0.316) calc(var(--xray-left) + var(--xray-fade-x) * 0.625),
+      rgb(0 0 0 / 0.156) calc(var(--xray-left) + var(--xray-fade-x) * 0.75),
+      rgb(0 0 0 / 0.043) calc(var(--xray-left) + var(--xray-fade-x) * 0.875),
+      transparent calc(var(--xray-left) + var(--xray-fade-x))
+    ),
+    linear-gradient(
+      to left,
+      black var(--xray-right),
+      rgb(0 0 0 / 0.957) calc(var(--xray-right) + var(--xray-fade-x) * 0.125),
+      rgb(0 0 0 / 0.844) calc(var(--xray-right) + var(--xray-fade-x) * 0.25),
+      rgb(0 0 0 / 0.684) calc(var(--xray-right) + var(--xray-fade-x) * 0.375),
+      rgb(0 0 0 / 0.500) calc(var(--xray-right) + var(--xray-fade-x) * 0.5),
+      rgb(0 0 0 / 0.316) calc(var(--xray-right) + var(--xray-fade-x) * 0.625),
+      rgb(0 0 0 / 0.156) calc(var(--xray-right) + var(--xray-fade-x) * 0.75),
+      rgb(0 0 0 / 0.043) calc(var(--xray-right) + var(--xray-fade-x) * 0.875),
+      transparent calc(var(--xray-right) + var(--xray-fade-x))
+    ),
+    linear-gradient(rgb(0 0 0 / calc(1 - var(--xray-strength))), rgb(0 0 0 / calc(1 - var(--xray-strength))));
+  mask-composite: add;
+}
+
+
+/* The surface's background: has the hole under the panel (none on phones). The hole fills in as the
+   strength rises, so the whole surface fades evenly instead of leaving a clear rectangle. */
+.xray-hole {
+  mask-image:
+    linear-gradient(to bottom, black var(--hole-top), transparent calc(var(--hole-top) + var(--hole-fade))),
+    linear-gradient(to top, black var(--hole-bottom), transparent calc(var(--hole-bottom) + var(--hole-fade))),
+    linear-gradient(to right, black var(--hole-left), transparent calc(var(--hole-left) + var(--hole-fade))),
+    linear-gradient(to left, black var(--hole-right), transparent calc(var(--hole-right) + var(--hole-fade))),
+    linear-gradient(rgb(0 0 0 / var(--xray-strength)), rgb(0 0 0 / var(--xray-strength)));
+  mask-composite: add;
+}
+
+/* Depth around the hole: the surface casts a shadow onto the interior just inside the hole, most
+   along the top edge (lit from above). It fades out as the x-ray opens. It sits between the
+   interior and the surface. */
+.xray-shadow {
+  background: rgb(0 0 0 / 0.65);
+  pointer-events: none;
+}
+.xray-shadow-hole {
+  opacity: calc(1 - var(--xray-strength));
+  mask-image:
+    linear-gradient(to bottom, black calc(var(--hole-top) + var(--hole-fade) * 0.3), transparent calc(var(--hole-top) + var(--hole-fade) * 1.25 + 28px)),
+    linear-gradient(to top, black calc(var(--hole-bottom) + var(--hole-fade) * 0.2), transparent calc(var(--hole-bottom) + var(--hole-fade) * 1.1 + 10px)),
+    linear-gradient(to right, black calc(var(--hole-left) + var(--hole-fade) * 0.35), transparent calc(var(--hole-left) + var(--hole-fade) * 1.3 + 18px)),
+    linear-gradient(to left, black calc(var(--hole-right) + var(--hole-fade) * 0.35), transparent calc(var(--hole-right) + var(--hole-fade) * 1.3 + 18px));
+  mask-composite: add;
+}
+
+/* The surface's background: the page colour with the dot grid, which fades out towards the edges
+   (painted over by a vignette in the page colour, since the mask is taken by the hole). */
+.xray-surface-bg {
+  background-color: var(--background);
+  background-image:
+    radial-gradient(ellipse at center, transparent 40%, var(--background) 85%),
+    radial-gradient(color-mix(in oklch, var(--foreground) 18%, transparent) 1px, transparent 1px);
+  background-size:
+    100% 100%,
+    24px 24px;
+}
+
+/* The look-inside panel leaves as soon as the x-ray opens, and comes back only once the surface is
+   unmasked again: inside a masked parent its backdrop blur can't reach the interior, so fading it in
+   earlier would make the blur snap on when the mask comes off. */
+.look-inside {
+  transition-property: opacity, backdrop-filter, border-color;
+}
+.xray-surface[data-open] .look-inside,
+.xray-surface[data-masked] .look-inside {
+  opacity: 0;
+}
+
+/* Open, clicks go through the see-through surface to the interior. */
+.xray-surface[data-open] {
+  pointer-events: none;
+}
+
+/* Distance: the interior is dimmed and desaturated, so it recedes rather than glowing in front of
+   the surface. */
+.xray-content {
+  /* Fitted inside the window's clear area (where the fade has ended), so the graph is always fully
+     visible; set by `useXrayWindow`. */
+  padding: var(--xray-clear-y, 15vh) var(--xray-clear-x, 15vw);
+  filter: brightness(0.9) saturate(0.85);
+  transition: opacity 300ms ease;
+}
+
+/* Fine grain on the interior's background: dithers the edge band's gradient over the dark
+   interior (otherwise it bands into faint rings) and gives the cavity some texture. */
+.xray-interior::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.07;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Closed, the interior is only seen through the glass, dimmed; hovering the panel brightens it. */
+.xray-interior:not([data-open]) {
+  pointer-events: none;
+}
+.xray-interior:not([data-open]) .xray-content {
+  opacity: 0.55;
+}
+:root:has(.look-inside:hover, .look-inside:focus-visible) .xray-interior:not([data-open]) .xray-content {
+  opacity: 0.9;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xray-surface,
+  .xray-content,
+  .xray-surface .look-inside {
+    transition: none;
+  }
+}
