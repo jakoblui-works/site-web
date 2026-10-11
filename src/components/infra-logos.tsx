@@ -1,7 +1,17 @@
-import { HardDriveIcon, MonitorIcon, type LucideIcon } from "lucide-react";
 import {
+  HardDriveIcon,
+  LaptopIcon,
+  MonitorIcon,
+  ServerIcon,
+  type LucideIcon,
+} from "lucide-react";
+import {
+  siAnsible,
   siDigitalocean,
+  siDocker,
   siFastapi,
+  siGithub,
+  siGithubactions,
   siLatex,
   siOpenapiinitiative,
   siPostgresql,
@@ -10,6 +20,7 @@ import {
   siRedis,
   siSentry,
   siStorybook,
+  siTerraform,
   siTraefikproxy,
   siVite,
   type SimpleIcon,
@@ -17,7 +28,8 @@ import {
 
 import { type LogoId } from "@/lib/infra-graph";
 
-// Brand marks come from Simple Icons (24×24 paths). Garage and "a browser" have none, so they use lucide icons.
+// Brand marks come from Simple Icons (24×24 paths). Garage, "a browser", a laptop and a server have
+// none, so they use lucide icons.
 type Logo = { title: string } & ({ path: string } | { Icon: LucideIcon });
 
 const brand = ({ title, path }: SimpleIcon): Logo => ({ title, path });
@@ -37,6 +49,13 @@ const logos: Record<LogoId, Logo> = {
   postgres: brand(siPostgresql),
   storage: { title: "Object storage", Icon: HardDriveIcon },
   sentry: brand(siSentry),
+  laptop: { title: "Laptop", Icon: LaptopIcon },
+  github: brand(siGithub),
+  githubactions: brand(siGithubactions),
+  docker: brand(siDocker),
+  ansible: brand(siAnsible),
+  terraform: brand(siTerraform),
+  server: { title: "Server", Icon: ServerIcon },
 };
 
 type InfraLogoProps = {

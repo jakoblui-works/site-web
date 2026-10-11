@@ -1,14 +1,14 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, fn, waitFor } from "storybook/test";
+import { expect, fn, waitFor, within } from "storybook/test";
 
-import { traceGroups } from "@/lib/trace-groups";
+import { graphs } from "@/lib/graphs";
 
 import { Xray } from "./xray";
 
 const meta: Meta<typeof Xray> = {
   title: "Components/Xray",
   component: Xray,
-  args: { open: true, selected: null, onSelect: fn(), onClose: fn() },
+  args: { open: true, graphId: "runtime", onGraphChange: fn(), selected: null, onSelect: fn(), onClose: fn() },
   parameters: { layout: "fullscreen" },
 };
 export default meta;
@@ -111,7 +111,7 @@ export const EdgeZoomsOutWhenZoomedIn: Story = {
 export const TraceGroup: Story = {
   args: { selected: "job-queue" },
   play: async ({ args, canvas, userEvent }) => {
-    const group = traceGroups.find((candidate) => candidate.id === "job-queue");
+    const group = graphs.runtime.traceGroups.find((candidate) => candidate.id === "job-queue");
     const firstLine = Object.values(group?.labels ?? {})[0][0];
 
     // The labels only appear once the camera has framed the group.
@@ -123,5 +123,35 @@ export const TraceGroup: Story = {
     // Leaving works as it does for nodes.
     await userEvent.keyboard("{Escape}");
     await expect(args.onSelect).toHaveBeenCalledWith(null);
+  },
+};
+
+export const SwitchesView: Story = {
+  play: async ({ args, canvas, userEvent }) => {
+    const views = canvas.getByRole("group", { name: "View" });
+    await expect(within(views).getByRole("button", { name: "Runtime" })).toHaveAttribute("aria-pressed", "true");
+    await userEvent.click(within(views).getByRole("button", { name: "Build & deploy" }));
+    await expect(args.onGraphChange).toHaveBeenCalledWith("deploy");
+    // The view already shown does nothing.
+    await userEvent.click(within(views).getByRole("button", { name: "Runtime" }));
+    await expect(args.onGraphChange).toHaveBeenCalledOnce();
+  },
+};
+
+export const DeployView: Story = {
+  args: { graphId: "deploy" },
+  play: async ({ canvas }) => {
+    for (const node of graphs.deploy.nodes) {
+      await expect(canvas.getByRole("button", { name: `${node.label}: ${node.detail}` })).toBeInTheDocument();
+    }
+    await expect(canvas.getByRole("button", { name: "Build & deploy", pressed: true })).toBeInTheDocument();
+  },
+};
+
+export const NoViewSwitchWhenZoomed: Story = {
+  args: { selected: "api" },
+  play: async ({ canvasElement }) => {
+    // Faded out, and out of reach.
+    await expect(canvasElement.querySelector("[data-view-switch]")).toHaveAttribute("inert");
   },
 };

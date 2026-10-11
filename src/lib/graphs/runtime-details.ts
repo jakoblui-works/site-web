@@ -1,15 +1,6 @@
-/** What the x-ray shows when a node is selected: what it is, what it's built with, and why. */
+/** What the x-ray says about each part of the runtime graph. */
 
-export type NodeLink = { label: string; url: string };
-
-export type NodeDetails = {
-  /** One or two sentences: what this part does. */
-  summary: string;
-  stack: string[];
-  /** Why it's built this way: the relevant decisions, one short line each. */
-  decisions: string[];
-  links: NodeLink[];
-};
+import type { NodeDetails, NodeLink } from "@/lib/infra-graph";
 
 const repo = (name: string): NodeLink => ({
   label: "Repo",
@@ -20,7 +11,7 @@ const storybook: NodeLink = {
   url: "https://storybook.jakoblui.com",
 };
 
-export const nodeDetails: Record<string, NodeDetails> = {
+export const runtimeDetails: Record<string, NodeDetails> = {
   browser: {
     summary:
       "Your browser. Every request starts here: DNS resolves the domain to the droplet, then HTTPS goes to Traefik.",

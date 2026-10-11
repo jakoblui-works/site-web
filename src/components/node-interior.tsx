@@ -1,8 +1,7 @@
 import { ArrowUpRightIcon } from "lucide-react";
 
 import { buttonVariants } from "@/components/ui/button";
-import { nodes } from "@/lib/infra-graph";
-import { nodeDetails } from "@/lib/node-details";
+import type { Graph } from "@/lib/infra-graph";
 import { cn } from "@/lib/utils";
 
 import {
@@ -15,14 +14,15 @@ import {
 
 /**
  * The inside of a node, seen once the camera has zoomed into it: no outline or background of its
- * own (that's the node, drawn by the graph, around it). Labelled like the droplet's casing.
+ * own (that's the node, drawn by the graph, around it). Labelled like the casing.
  */
 export const NodeInterior = ({
+  graph,
   nodeId,
   ...frame
-}: ZoomFrameProps & { nodeId: string }) => {
-  const node = nodes.find((candidate) => candidate.id === nodeId);
-  const details = nodeDetails[nodeId];
+}: ZoomFrameProps & { graph: Graph; nodeId: string }) => {
+  const node = graph.nodes.find((candidate) => candidate.id === nodeId);
+  const details = graph.details[nodeId];
   if (!node || !details) return null;
   const titleId = `${nodeId}-interior-title`;
 
