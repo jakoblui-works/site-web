@@ -7,7 +7,7 @@ import {
 } from "react";
 
 import { Button } from "@/components/ui/button";
-import type { Graph } from "@/lib/infra-graph";
+import { graphs, type GraphId } from "@/lib/graphs";
 import { NARROW_CROP, traceArea } from "@/lib/trace-groups";
 import { cn } from "@/lib/utils";
 import {
@@ -26,10 +26,14 @@ import {
 import { InfraGraph } from "./infra-graph";
 import { NodeInterior } from "./node-interior";
 import { TraceLabels } from "./trace-labels";
+import { ViewSwitch } from "./view-switch";
 import type { ZoomFrameProps } from "./zoom-content";
 
 /** Wide screens show the landscape graph (Tailwind's `lg`). */
 const WIDE = 1024;
+
+/** How long switching graphs cross-fades (matches the switch's `duration-500`). */
+const SWITCH_MS = 500;
 
 /** How long zooming into (or out of) a node takes. */
 const ZOOM_MS = 1100;
@@ -55,8 +59,10 @@ const Kbd = ({ children }: { children: string }) => (
 
 type XrayProps = {
   open: boolean;
-  /** The view shown. */
-  graph: Graph;
+  /** The graph shown (the URL's `view`). */
+  graphId: GraphId;
+  /** Switch to another graph (from its overview). */
+  onGraphChange: (id: GraphId) => void;
   /** The selected node or group of traces, which the camera zooms into. */
   selected: string | null;
   /** Select a node or group of traces, or go back to the overview with `null`. */
@@ -68,8 +74,31 @@ type XrayProps = {
  * The interior: fixed behind the page the whole time. The surface's mask decides how much of it
  * shows (a hole under the look-inside panel, or most of the screen when open).
  */
-export const Xray = ({ open, graph, selected, onSelect, onClose }: XrayProps) => {
+export const Xray = ({
+  open,
+  graphId,
+  onGraphChange,
+  selected,
+  onSelect,
+  onClose,
+}: XrayProps) => {
+  const graph = graphs[graphId];
   const { landscape, portrait } = graph.layouts;
+
+  // Switching graphs cross-fades: the one left stays on top and fades out over the new one, which
+  // fades in. (Adjusted while rendering, so the old one never disappears for a frame.)
+  const [shownId, setShownId] = useState(graphId);
+  const [leaving, setLeaving] = useState<GraphId | null>(null);
+  if (graphId !== shownId) {
+    setShownId(graphId);
+    const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    setLeaving(reduced ? null : shownId);
+  }
+  useEffect(() => {
+    if (!leaving) return;
+    const timer = setTimeout(() => setLeaving(null), SWITCH_MS);
+    return () => clearTimeout(timer);
+  }, [leaving]);
   const regionRef = useRef<HTMLElement>(null);
 
   // The latest props for the handlers, so their effects only run when opening, closing or selecting.
@@ -373,19 +402,54 @@ export const Xray = ({ open, graph, selected, onSelect, onClose }: XrayProps) =>
               // The graph keeps its lines thin however far in the camera is.
               ["--zoom" as string]: camera.scale,
             }}
-            className="xray-camera size-full"
+            className="xray-camera relative size-full"
           >
-            <InfraGraph
-              layout={landscape}
-              {...graphProps}
-              className="hidden size-full lg:block"
-            />
-            <InfraGraph
-              layout={portrait}
-              {...graphProps}
-              className="size-full lg:hidden"
-            />
+            <div
+              key={graphId}
+              className={cn(
+                "size-full",
+                leaving && "animate-in fade-in duration-500 ease-in-out",
+              )}
+            >
+              <InfraGraph
+                layout={landscape}
+                {...graphProps}
+                className="hidden size-full lg:block"
+              />
+              <InfraGraph
+                layout={portrait}
+                {...graphProps}
+                className="size-full lg:hidden"
+              />
+            </div>
+            {leaving && (
+              <div
+                key={leaving}
+                aria-hidden
+                className="pointer-events-none absolute inset-0 animate-out fade-out fill-mode-forwards duration-500 ease-in-out"
+              >
+                <InfraGraph
+                  graph={graphs[leaving]}
+                  layout={graphs[leaving].layouts.landscape}
+                  decorative
+                  className="hidden size-full lg:block"
+                />
+                <InfraGraph
+                  graph={graphs[leaving]}
+                  layout={graphs[leaving].layouts.portrait}
+                  decorative
+                  className="size-full lg:hidden"
+                />
+              </div>
+            )}
           </div>
+          {/* Only in the overview: inside a node or a group, the way out comes first. */}
+          <ViewSwitch
+            value={graphId}
+            onChange={onGraphChange}
+            inert={!!shown}
+            className={cn("transition-opacity duration-300", shown && "opacity-0")}
+          />
         </div>
         {shown &&
           (shownGroup ? (

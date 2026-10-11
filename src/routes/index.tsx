@@ -7,20 +7,25 @@ import { FrostedGraph } from "@/components/frosted-graph";
 import { SiteHeader } from "@/components/site-header";
 import { Xray } from "@/components/xray";
 import { useXrayWindow } from "@/hooks/use-xray-window";
-import { graphs } from "@/lib/graphs";
+import { graphs, type GraphId } from "@/lib/graphs";
 import { isZoomTarget } from "@/lib/infra-graph";
 
 // `?xray` opens the interior, and `?xray=<node or trace group>` also zooms into it. A bare `?xray`
 // parses as an empty string, so "open" means present, not truthy; an unknown id shows the overview.
+// `view` picks the x-ray's graph: absent (or unknown) is the runtime view.
 const homeSearchSchema = z.object({
   xray: z.string().optional(),
+  view: z
+    .enum(["runtime", "deploy"] satisfies GraphId[])
+    .optional()
+    .catch(undefined),
 });
 
 const HomeComponent = () => {
-  const { xray } = Route.useSearch();
+  const { xray, view = "runtime" } = Route.useSearch();
   const navigate = Route.useNavigate();
   const isOpen = xray !== undefined;
-  const graph = graphs.runtime;
+  const graph = graphs[view];
   const selected = xray && isZoomTarget(graph, xray) ? xray : null;
 
   const surfaceRef = useRef<HTMLDivElement>(null);
@@ -59,7 +64,7 @@ const HomeComponent = () => {
             aria-hidden
             className="xray-hole xray-surface-bg absolute inset-0 -z-10"
           >
-            <FrostedGraph graph={graph} />
+            <FrostedGraph graphId={view} />
           </div>
           <SiteHeader />
           <main>
@@ -68,7 +73,10 @@ const HomeComponent = () => {
               buttonRef={buttonRef}
               inert={isOpen}
               onLookInside={() =>
-                navigate({ search: { xray: "" }, resetScroll: false })
+                navigate({
+                  search: (search) => ({ ...search, xray: "" }),
+                  resetScroll: false,
+                })
               }
             />
           </main>
@@ -77,12 +85,29 @@ const HomeComponent = () => {
       {/* The interior: fixed at z-0, so it sits behind the surface. */}
       <Xray
         open={isOpen}
-        graph={graph}
+        graphId={view}
         selected={selected}
         onSelect={(id) =>
-          navigate({ search: { xray: id ?? "" }, resetScroll: false })
+          navigate({
+            search: (search) => ({ ...search, xray: id ?? "" }),
+            resetScroll: false,
+          })
         }
-        onClose={() => navigate({ search: {}, resetScroll: false })}
+        // Back to the new view's overview (the default view stays out of the URL).
+        onGraphChange={(next) =>
+          navigate({
+            search: { xray: "", view: next === "runtime" ? undefined : next },
+            resetScroll: false,
+          })
+        }
+        // Closing keeps the view: the x-ray fades out on the graph that was shown, the look-inside
+        // panel keeps showing it, and opening again comes back to it.
+        onClose={() =>
+          navigate({
+            search: ({ view }) => ({ view }),
+            resetScroll: false,
+          })
+        }
       />
     </>
   );
