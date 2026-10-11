@@ -7,8 +7,8 @@ import { FrostedGraph } from "@/components/frosted-graph";
 import { SiteHeader } from "@/components/site-header";
 import { Xray } from "@/components/xray";
 import { useXrayWindow } from "@/hooks/use-xray-window";
-import { nodeDetails } from "@/lib/node-details";
-import { traceGroups } from "@/lib/trace-groups";
+import { graphs } from "@/lib/graphs";
+import { isZoomTarget } from "@/lib/infra-graph";
 
 // `?xray` opens the interior, and `?xray=<node or trace group>` also zooms into it. A bare `?xray`
 // parses as an empty string, so "open" means present, not truthy; an unknown id shows the overview.
@@ -20,10 +20,8 @@ const HomeComponent = () => {
   const { xray } = Route.useSearch();
   const navigate = Route.useNavigate();
   const isOpen = xray !== undefined;
-  const selected =
-    xray && (xray in nodeDetails || traceGroups.some((group) => group.id === xray))
-      ? xray
-      : null;
+  const graph = graphs.runtime;
+  const selected = xray && isZoomTarget(graph, xray) ? xray : null;
 
   const surfaceRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLButtonElement>(null);
@@ -61,7 +59,7 @@ const HomeComponent = () => {
             aria-hidden
             className="xray-hole xray-surface-bg absolute inset-0 -z-10"
           >
-            <FrostedGraph />
+            <FrostedGraph graph={graph} />
           </div>
           <SiteHeader />
           <main>
@@ -79,6 +77,7 @@ const HomeComponent = () => {
       {/* The interior: fixed at z-0, so it sits behind the surface. */}
       <Xray
         open={isOpen}
+        graph={graph}
         selected={selected}
         onSelect={(id) =>
           navigate({ search: { xray: id ?? "" }, resetScroll: false })

@@ -1,14 +1,14 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, waitFor } from "storybook/test";
 
-import { traceGroups } from "@/lib/trace-groups";
+import { graphs } from "@/lib/graphs";
 
 import { Xray } from "./xray";
 
 const meta: Meta<typeof Xray> = {
   title: "Components/Xray",
   component: Xray,
-  args: { open: true, selected: null, onSelect: fn(), onClose: fn() },
+  args: { open: true, graph: graphs.runtime, selected: null, onSelect: fn(), onClose: fn() },
   parameters: { layout: "fullscreen" },
 };
 export default meta;
@@ -111,7 +111,7 @@ export const EdgeZoomsOutWhenZoomedIn: Story = {
 export const TraceGroup: Story = {
   args: { selected: "job-queue" },
   play: async ({ args, canvas, userEvent }) => {
-    const group = traceGroups.find((candidate) => candidate.id === "job-queue");
+    const group = graphs.runtime.traceGroups.find((candidate) => candidate.id === "job-queue");
     const firstLine = Object.values(group?.labels ?? {})[0][0];
 
     // The labels only appear once the camera has framed the group.

@@ -1,14 +1,18 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn } from "storybook/test";
 
-import { landscapeLayout, nodes, portraitLayout } from "@/lib/infra-graph";
-import { traceGroups } from "@/lib/trace-groups";
+import { graphs } from "@/lib/graphs";
 
 import { InfraGraph } from "./infra-graph";
+
+const graph = graphs.runtime;
+const { nodes, traceGroups } = graph;
+const { landscape, portrait } = graph.layouts;
 
 const meta: Meta<typeof InfraGraph> = {
   title: "Components/InfraGraph",
   component: InfraGraph,
+  args: { graph },
   parameters: { layout: "padded" },
 };
 export default meta;
@@ -23,17 +27,17 @@ const showsEveryNode: Story["play"] = async ({ canvas }) => {
 };
 
 export const Landscape: Story = {
-  args: { layout: landscapeLayout },
+  args: { layout: landscape },
   play: showsEveryNode,
 };
 
 export const Portrait: Story = {
-  args: { layout: portraitLayout, className: "max-w-sm" },
+  args: { layout: portrait, className: "max-w-sm" },
   play: showsEveryNode,
 };
 
 export const Selectable: Story = {
-  args: { layout: landscapeLayout, onSelect: fn() },
+  args: { layout: landscape, onSelect: fn() },
   play: async ({ args, canvas, userEvent }) => {
     for (const node of nodes) {
       await userEvent.click(
@@ -51,7 +55,7 @@ export const Selectable: Story = {
 };
 
 export const WithSelection: Story = {
-  args: { layout: landscapeLayout, onSelect: fn(), selected: "api" },
+  args: { layout: landscape, onSelect: fn(), selected: "api" },
   play: async ({ canvas }) => {
     await expect(
       canvas.getByRole("button", { name: /^api:/, pressed: true }),
@@ -60,7 +64,7 @@ export const WithSelection: Story = {
 };
 
 export const SelectableTraces: Story = {
-  args: { layout: landscapeLayout, onSelect: fn() },
+  args: { layout: landscape, onSelect: fn() },
   play: async ({ args, canvas, userEvent }) => {
     // Each group of traces is one button, and selects itself.
     for (const group of traceGroups) {
@@ -73,10 +77,29 @@ export const SelectableTraces: Story = {
 };
 
 export const WithTraceGroupSelected: Story = {
-  args: { layout: landscapeLayout, onSelect: fn(), selectedGroup: "job-queue" },
+  args: { layout: landscape, onSelect: fn(), selectedGroup: "job-queue" },
   play: async ({ canvas }) => {
     await expect(
       canvas.getByRole("button", { name: /^Job queue:/, pressed: true }),
     ).toBeInTheDocument();
   },
+};
+
+const deploy = graphs.deploy;
+
+const showsEveryDeployNode: Story["play"] = async ({ canvas }) => {
+  await expect(canvas.getByRole("img")).toBeVisible();
+  for (const node of deploy.nodes) {
+    await expect(canvas.getByText(node.label)).toBeInTheDocument();
+  }
+};
+
+export const DeployLandscape: Story = {
+  args: { graph: deploy, layout: deploy.layouts.landscape },
+  play: showsEveryDeployNode,
+};
+
+export const DeployPortrait: Story = {
+  args: { graph: deploy, layout: deploy.layouts.portrait, className: "max-w-sm" },
+  play: showsEveryDeployNode,
 };

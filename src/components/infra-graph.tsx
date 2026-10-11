@@ -3,14 +3,12 @@ import { useId, type KeyboardEvent } from "react";
 import {
   edgeId,
   edgeRoute,
-  edges,
-  nodes,
+  type Graph,
   type GraphEdge,
   type GraphLayout,
   type NodeKind,
   type Point,
 } from "@/lib/infra-graph";
-import { traceGroups } from "@/lib/trace-groups";
 import { cn } from "@/lib/utils";
 
 import { InfraLogo } from "./infra-logos";
@@ -44,7 +42,7 @@ const toPoints = (route: Point[]) => route.map(({ x, y }) => `${x},${y}`).join("
 const SCREW_INSET = 18;
 
 // The interior is themed in the brand's violet: a deep purple cavity (set by the x-ray layer),
-// a lighter board for the droplet, and violet-tinted nodes and traces.
+// a lighter board for the casing, and violet-tinted nodes and traces.
 const nodeStyles: Record<NodeKind, string> = {
   client: "fill-[oklch(0.3_0.08_292)] stroke-violet-200/60",
   external: "fill-[oklch(0.22_0.06_292)] stroke-violet-300/40 [stroke-dasharray:4_4]",
@@ -55,6 +53,8 @@ const nodeStyles: Record<NodeKind, string> = {
 };
 
 type InfraGraphProps = {
+  graph: Graph;
+  /** One of the graph's layouts. */
   layout: GraphLayout;
   /** `contain` shows the whole graph; `cover` fills the box and crops (for glimpses). */
   fit?: "contain" | "cover";
@@ -72,6 +72,7 @@ type InfraGraphProps = {
 };
 
 export const InfraGraph = ({
+  graph,
   layout,
   fit = "contain",
   decorative = false,
@@ -86,7 +87,7 @@ export const InfraGraph = ({
   const textureId = `${id}-texture`;
   const titleId = `${id}-title`;
   const { node: size, casing, positions } = layout;
-  const group = traceGroups.find((candidate) => candidate.id === selectedGroup);
+  const group = graph.traceGroups.find((candidate) => candidate.id === selectedGroup);
   // What stays bright: everything, or the selected node and its traces, or the selected group.
   const isLit = {
     edge: (edge: GraphEdge) =>
@@ -125,11 +126,7 @@ export const InfraGraph = ({
       className={cn("h-auto w-full", className)}
     >
       {!decorative && (
-        <title id={titleId}>
-          Infrastructure: a browser reaches Traefik on a DigitalOcean droplet,
-          which routes to the frontends and the api; the api queues CV jobs on
-          Redis for the cv-worker, and both use Postgres and Garage.
-        </title>
+        <title id={titleId}>{graph.description}</title>
       )}
       <defs>
         <marker
@@ -181,13 +178,13 @@ export const InfraGraph = ({
           y={casing.y + SCREW_INSET + 4}
           className="fill-violet-200/60 font-mono text-[13px]"
         >
-          DigitalOcean droplet · fra1
+          {graph.casingLabel}
         </text>
       </g>
 
       {/* The traces, one button per group: clicking any of its traces selects the group. */}
       <g>
-        {traceGroups.map((traceGroup) => (
+        {graph.traceGroups.map((traceGroup) => (
           <g
             key={traceGroup.id}
             data-group={traceGroup.id}
@@ -198,7 +195,7 @@ export const InfraGraph = ({
             )}
             className={cn("group/trace outline-none", onSelect && "cursor-pointer")}
           >
-            {edges
+            {graph.edges
               .filter((edge) => traceGroup.edges.includes(edgeId(edge)))
               .map((edge) => {
                 const route = edgeRoute(layout, edge);
@@ -250,7 +247,7 @@ export const InfraGraph = ({
       </g>
 
       <g>
-        {nodes.map((node) => {
+        {graph.nodes.map((node) => {
           const { x, y } = positions[node.id];
           const left = x - size.width / 2;
           const logoSize =

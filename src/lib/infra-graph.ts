@@ -1,4 +1,4 @@
-/** The runtime infrastructure shown in the x-ray: what runs where, and what talks to what. */
+/** The graphs shown in the x-ray: their shape, and how their traces are routed and labelled. */
 
 export type NodeKind =
   | "client"
@@ -23,7 +23,14 @@ export type LogoId =
   | "latex"
   | "postgres"
   | "storage"
-  | "sentry";
+  | "sentry"
+  | "laptop"
+  | "github"
+  | "githubactions"
+  | "docker"
+  | "ansible"
+  | "terraform"
+  | "server";
 
 export type GraphNode = {
   id: string;
@@ -33,8 +40,8 @@ export type GraphNode = {
   /** One or two logos, shown on the left of the node. */
   logos: LogoId[];
   kind: NodeKind;
-  /** Runs inside the droplet (drawn within the casing). */
-  inDroplet: boolean;
+  /** Drawn within the casing (e.g. runs inside the droplet). */
+  inCasing: boolean;
 };
 
 export type GraphEdge = {
@@ -90,36 +97,49 @@ export type GraphLayout = {
   labels?: Record<string, LabelSpot>;
 };
 
-export const nodes: GraphNode[] = [
-  { id: "browser", label: "You", detail: "browser", logos: ["browser"], kind: "client", inDroplet: false },
-  { id: "dns", label: "DNS", detail: "DigitalOcean", logos: ["digitalocean"], kind: "external", inDroplet: false },
-  { id: "traefik", label: "Traefik", detail: "reverse proxy", logos: ["traefik"], kind: "edge", inDroplet: true },
-  { id: "site-web", label: "site-web", detail: "React · Vite", logos: ["react", "vite"], kind: "frontend", inDroplet: true },
-  { id: "cv-web", label: "cv-web", detail: "React · Vite", logos: ["react", "vite"], kind: "frontend", inDroplet: true },
-  { id: "storybook", label: "Storybook", detail: "composed", logos: ["storybook"], kind: "frontend", inDroplet: true },
-  { id: "api", label: "api", detail: "FastAPI · REST", logos: ["fastapi", "openapi"], kind: "service", inDroplet: true },
-  { id: "redis", label: "Redis", detail: "Streams", logos: ["redis"], kind: "store", inDroplet: true },
-  { id: "cv-worker", label: "cv-worker", detail: "Taskiq · LaTeX", logos: ["python", "latex"], kind: "service", inDroplet: true },
-  { id: "postgres", label: "Postgres", detail: "18", logos: ["postgres"], kind: "store", inDroplet: true },
-  { id: "garage", label: "Garage", detail: "S3", logos: ["storage"], kind: "store", inDroplet: true },
-  { id: "sentry", label: "Sentry", detail: "errors", logos: ["sentry"], kind: "external", inDroplet: false },
-];
+export type NodeLink = { label: string; url: string };
 
-export const edges: GraphEdge[] = [
-  { from: "browser", to: "dns", dashed: true },
-  { from: "browser", to: "traefik" },
-  { from: "traefik", to: "site-web" },
-  { from: "traefik", to: "cv-web" },
-  { from: "traefik", to: "storybook" },
-  { from: "traefik", to: "api" },
-  { from: "api", to: "redis" },
-  { from: "redis", to: "cv-worker" },
-  { from: "api", to: "postgres" },
-  { from: "api", to: "garage" },
-  { from: "cv-worker", to: "postgres" },
-  { from: "cv-worker", to: "garage" },
-  { from: "api", to: "sentry", dashed: true },
-];
+/** What the x-ray shows when a node is selected: what it is, what it's built with, and why. */
+export type NodeDetails = {
+  /** One or two sentences: what this part does. */
+  summary: string;
+  stack: string[];
+  /** Why it's built this way: the relevant decisions, one short line each. */
+  decisions: string[];
+  links: NodeLink[];
+};
+
+/** Traces grouped by what they do: what the x-ray shows when a trace is clicked. */
+export type TraceGroup = {
+  id: string;
+  title: string;
+  /** The parts it connects, in reading order. */
+  path: string;
+  /** Its traces, by `edgeId`. */
+  edges: string[];
+  /**
+   * What each trace carries, printed next to it once zoomed in: one or two short lines, the first
+   * what flows (short: it's all phones have room for), the second why. Keyed by `edgeId`.
+   */
+  labels: Record<string, string[]>;
+};
+
+/** One view of the x-ray: its parts, how they connect, where they sit, and what they say. */
+export type Graph = {
+  /** What it shows, for assistive tech. */
+  description: string;
+  /** Printed on the casing, next to its top-left screw. */
+  casingLabel: string;
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+  layouts: { landscape: GraphLayout; portrait: GraphLayout };
+  details: Record<string, NodeDetails>;
+  traceGroups: TraceGroup[];
+};
+
+/** Whether `id` is something in the graph to zoom into: a node, or a group of traces. */
+export const isZoomTarget = (graph: Graph, id: string) =>
+  id in graph.details || graph.traceGroups.some((group) => group.id === id);
 
 export const edgeId = (edge: GraphEdge) => `${edge.from}->${edge.to}`;
 
@@ -218,100 +238,6 @@ export const edgeRoute = (layout: GraphLayout, edge: GraphEdge): Point[] => {
   const p1 = diag(start, diagonal * bend);
   const p2 = step(p1, other, along(other) - diagonal);
   return dedupe([start, p1, p2, end]);
-};
-
-/**
- * Wide screens: Traefik feeds the frontend row from below along a shared bus, the api row sits
- * below that, and the data stores at the bottom.
- */
-export const landscapeLayout: GraphLayout = {
-  width: 1160,
-  height: 760,
-  node: { width: 170, height: 60 },
-  casing: { x: 200, y: 40, width: 900, height: 630 },
-  positions: {
-    browser: { x: 100, y: 330 },
-    dns: { x: 100, y: 130 },
-    traefik: { x: 360, y: 330 },
-    "site-web": { x: 600, y: 140 },
-    "cv-web": { x: 790, y: 140 },
-    storybook: { x: 980, y: 140 },
-    api: { x: 600, y: 460 },
-    redis: { x: 790, y: 460 },
-    "cv-worker": { x: 980, y: 460 },
-    postgres: { x: 690, y: 600 },
-    garage: { x: 880, y: 600 },
-    sentry: { x: 420, y: 710 },
-  },
-  routes: {
-    "traefik->site-web": { exit: "x", enter: "y" },
-    "traefik->cv-web": { exit: "x", enter: "y" },
-    "traefik->storybook": { exit: "x", enter: "y" },
-    "traefik->api": { exit: "y", enter: "x" },
-    "api->postgres": { exit: "y", enter: "y" },
-    "api->garage": { exit: "y", enter: "y", bend: 0.3 },
-    "cv-worker->postgres": { exit: "y", enter: "y", bend: 0.7 },
-    "cv-worker->garage": { exit: "y", enter: "y" },
-    "api->sentry": { exit: "y", enter: "x" },
-  },
-  labels: {
-    "browser->dns": { at: 0.5, side: "right" },
-    "browser->traefik": { at: 0.5, side: "above", clear: true },
-    "traefik->site-web": { at: 0.8, side: "right" },
-    "traefik->cv-web": { at: 0.87, side: "right" },
-    "traefik->storybook": { at: 0.9, side: "right" },
-    "traefik->api": { at: 0.75, side: "below", dx: -60 },
-    "api->redis": { at: 0.5, side: "above", clear: true },
-    "redis->cv-worker": { at: 0.5, side: "above", clear: true },
-    "api->postgres": { at: 0.5, side: "left", clear: true },
-    "api->garage": { at: 0.45, side: "above" },
-    "cv-worker->postgres": { at: 0.8, side: "above" },
-    "cv-worker->garage": { at: 0.6, side: "right", clear: true },
-    "api->sentry": { at: 0.35, side: "left" },
-  },
-};
-
-/** Phones: requests flow top to bottom. */
-export const portraitLayout: GraphLayout = {
-  width: 480,
-  height: 1000,
-  node: { width: 170, height: 58 },
-  casing: { x: 12, y: 130, width: 456, height: 740 },
-  positions: {
-    browser: { x: 300, y: 55 },
-    dns: { x: 95, y: 55 },
-    traefik: { x: 120, y: 210 },
-    "site-web": { x: 360, y: 200 },
-    "cv-web": { x: 360, y: 290 },
-    storybook: { x: 360, y: 380 },
-    api: { x: 120, y: 400 },
-    redis: { x: 360, y: 530 },
-    "cv-worker": { x: 370, y: 640 },
-    postgres: { x: 110, y: 790 },
-    garage: { x: 350, y: 790 },
-    sentry: { x: 240, y: 930 },
-  },
-  routes: {
-    "browser->traefik": { exit: "y", enter: "y" },
-    "api->garage": { bend: 1 },
-    "api->sentry": { bend: 0 },
-  },
-  // Narrow: one short line per label, framed closer (cropped at the sides), where there's room.
-  labels: {
-    "browser->dns": { at: 0.5, side: "above", clear: true },
-    "browser->traefik": { at: 0.5, side: "above" },
-    "traefik->site-web": { at: 0.5, side: "above", clear: true },
-    "traefik->cv-web": { at: 0.5, side: "right" },
-    "traefik->storybook": { at: 0.7, side: "right" },
-    "traefik->api": { at: 0.5, side: "right" },
-    "api->redis": { at: 0.5, side: "right" },
-    "redis->cv-worker": { at: 0.45, side: "left" },
-    "api->postgres": { at: 0.7, side: "right" },
-    "api->garage": { at: 0.2, side: "right" },
-    "cv-worker->postgres": { at: 0.5, side: "left" },
-    "cv-worker->garage": { at: 1, side: "below", dy: 60 },
-    "api->sentry": { at: 0.5, side: "left" },
-  },
 };
 
 /** The point a fraction `at` (0..1) of the way along a route, by length. */

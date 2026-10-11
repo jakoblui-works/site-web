@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { landscapeLayout, nodes, portraitLayout, type Rect } from "./infra-graph";
-import { traceArea, traceGroups } from "./trace-groups";
+import { graphs } from "./graphs";
+import type { Rect } from "./infra-graph";
+import { traceArea } from "./trace-groups";
 import {
   ease,
   easeInverse,
@@ -16,11 +17,11 @@ import {
 
 /** Stages (the window's clear area) on a laptop, a big monitor, a tablet and a phone. */
 const screens = {
-  laptop: { stage: { x: 173, y: 108, width: 1094, height: 684 }, layout: landscapeLayout },
-  monitor: { stage: { x: 307, y: 130, width: 1946, height: 1180 }, layout: landscapeLayout },
-  qhd: { stage: { x: 307, y: 173, width: 1946, height: 1094 }, layout: landscapeLayout },
-  tablet: { stage: { x: 61, y: 112, width: 646, height: 800 }, layout: portraitLayout },
-  phone: { stage: { x: 31, y: 93, width: 328, height: 658 }, layout: portraitLayout },
+  laptop: { stage: { x: 173, y: 108, width: 1094, height: 684 }, layout: "landscape" },
+  monitor: { stage: { x: 307, y: 130, width: 1946, height: 1180 }, layout: "landscape" },
+  qhd: { stage: { x: 307, y: 173, width: 1946, height: 1094 }, layout: "landscape" },
+  tablet: { stage: { x: 61, y: 112, width: 646, height: 800 }, layout: "portrait" },
+  phone: { stage: { x: 31, y: 93, width: 328, height: 658 }, layout: "portrait" },
 } as const;
 
 /** Short and long internals (the long ones scroll). */
@@ -34,88 +35,97 @@ const inside = (inner: Rect, outer: Rect) =>
   inner.x + inner.width <= outer.x + outer.width + EPS &&
   inner.y + inner.height <= outer.y + outer.height + EPS;
 
-describe.each(Object.entries(screens))("zooming into a node on a %s", (_, { stage, layout }) => {
-  it("starts from the overview, with the node exactly as the graph draws it", () => {
-    for (const node of nodes) {
-      const { camera, target: rect } = zoomFrame(planZoom(layout, node.id, stage, 400), 0);
-      expect(camera).toEqual(IDENTITY);
-      const { x, y } = layout.positions[node.id];
-      const topLeft = toStage(layout, stage, {
-        x: x - layout.node.width / 2,
-        y: y - layout.node.height / 2,
-      });
-      expect(rect.x).toBeCloseTo(topLeft.x);
-      expect(rect.y).toBeCloseTo(topLeft.y);
-    }
-  });
+describe.each(Object.entries(graphs))("%s graph", (_, graph) => {
+  const { nodes, traceGroups } = graph;
 
-  it.each(contentHeights)("ends inside the node, framing %ipx of internals", (height) => {
-    for (const node of nodes) {
-      const { target: rect, content } = zoomFrame(planZoom(layout, node.id, stage, height), 1);
-      // Centred, with its sides at or past the stage's edges and its top and bottom on stage.
-      expect(rect.x + rect.width / 2).toBeCloseTo(stage.x + stage.width / 2);
-      expect(rect.y + rect.height / 2).toBeCloseTo(stage.y + stage.height / 2);
-      expect(rect.width).toBeGreaterThanOrEqual(stage.width - EPS);
-      expect(rect.height).toBeLessThanOrEqual(stage.height + EPS);
-      // The internals fill it top to bottom (or scroll), on stage.
-      expect(inside(content, stage), node.id).toBe(true);
-      expect(content.height).toBeCloseTo(rect.height);
-    }
-  });
-
-  it("keeps the internals inside the node all the way in", () => {
-    for (const node of nodes) {
-      const plan = planZoom(layout, node.id, stage, 600);
-      for (const t of steps) {
-        const frame = zoomFrame(plan, ease(t));
-        expect(inside(frame.content, frame.target), `${node.id} at ${t}`).toBe(true);
+  describe.each(Object.entries(screens))("zooming into a node on a %s", (_, { stage, layout: shape }) => {
+    const layout = graph.layouts[shape];
+    it("starts from the overview, with the node exactly as the graph draws it", () => {
+      for (const node of nodes) {
+        const { camera, target: rect } = zoomFrame(planZoom(layout, node.id, stage, 400), 0);
+        expect(camera).toEqual(IDENTITY);
+        const { x, y } = layout.positions[node.id];
+        const topLeft = toStage(layout, stage, {
+          x: x - layout.node.width / 2,
+          y: y - layout.node.height / 2,
+        });
+        expect(rect.x).toBeCloseTo(topLeft.x);
+        expect(rect.y).toBeCloseTo(topLeft.y);
       }
-    }
-  });
+    });
 
-  it("only ever zooms in, and the internals grow with it", () => {
-    const plan = planZoom(layout, "api", stage, 400);
-    const frames = steps.map((t) => zoomFrame(plan, ease(t)));
-    for (const [i, frame] of frames.slice(1).entries()) {
-      expect(frame.camera.scale).toBeGreaterThanOrEqual(frames[i].camera.scale);
-      expect(frame.contentScale).toBeGreaterThanOrEqual(frames[i].contentScale);
-    }
-    expect(frames.at(-1)?.contentScale).toBeCloseTo(plan.contentZoom);
-  });
-
-  it("can start from a camera that's already zoomed", () => {
-    const from = { x: -120, y: 40, scale: 1.7 };
-    expect(zoomFrame(planZoom(layout, "api", stage, 400, from), 0).camera).toEqual(from);
-  });
-});
-
-describe.each(Object.entries(screens))("framing a group of traces on a %s", (_, { stage, layout }) => {
-  it("zooms in on it, centred, never further out than the overview", () => {
-    for (const group of traceGroups) {
-      const plan = planFrameZoom(layout, group.id, traceArea(layout, group), stage);
-      expect(zoomFrame(plan, 0).camera).toEqual(IDENTITY);
-      const { target } = zoomFrame(plan, 1);
-      expect(plan.to.scale, group.id).toBeGreaterThanOrEqual(1 - EPS);
-      expect(target.x + target.width / 2).toBeCloseTo(stage.x + stage.width / 2);
-      expect(target.y + target.height / 2).toBeCloseTo(stage.y + stage.height / 2);
-      // Wherever the camera could get closer than the overview, the whole group is on stage.
-      if (plan.to.scale > 1 + EPS) expect(inside(target, stage), group.id).toBe(true);
-    }
-  });
-
-  it("frames closer when allowed to crop, keeping the group's height on stage", () => {
-    for (const group of traceGroups) {
-      const area = traceArea(layout, group);
-      const plain = planFrameZoom(layout, group.id, area, stage);
-      const cropped = planFrameZoom(layout, group.id, area, stage, IDENTITY, 1.4);
-      expect(cropped.to.scale, group.id).toBeGreaterThanOrEqual(plain.to.scale - EPS);
-      const { target } = zoomFrame(cropped, 1);
-      expect(target.width, group.id).toBeLessThanOrEqual(1.4 * stage.width + EPS);
-      if (cropped.to.scale > 1 + EPS) {
-        expect(target.y, group.id).toBeGreaterThanOrEqual(stage.y - EPS);
-        expect(target.y + target.height, group.id).toBeLessThanOrEqual(stage.y + stage.height + EPS);
+    it.each(contentHeights)("ends inside the node, framing %ipx of internals", (height) => {
+      for (const node of nodes) {
+        const { target: rect, content } = zoomFrame(planZoom(layout, node.id, stage, height), 1);
+        // Centred, with its sides at or past the stage's edges and its top and bottom on stage.
+        expect(rect.x + rect.width / 2).toBeCloseTo(stage.x + stage.width / 2);
+        expect(rect.y + rect.height / 2).toBeCloseTo(stage.y + stage.height / 2);
+        expect(rect.width).toBeGreaterThanOrEqual(stage.width - EPS);
+        expect(rect.height).toBeLessThanOrEqual(stage.height + EPS);
+        // The internals fill it top to bottom (or scroll), on stage.
+        expect(inside(content, stage), node.id).toBe(true);
+        expect(content.height).toBeCloseTo(rect.height);
       }
-    }
+    });
+
+    it("keeps the internals inside the node all the way in", () => {
+      for (const node of nodes) {
+        const plan = planZoom(layout, node.id, stage, 600);
+        for (const t of steps) {
+          const frame = zoomFrame(plan, ease(t));
+          expect(inside(frame.content, frame.target), `${node.id} at ${t}`).toBe(true);
+        }
+      }
+    });
+
+    it("only ever zooms in, and the internals grow with it", () => {
+      const plan = planZoom(layout, nodes[0].id, stage, 400);
+      const frames = steps.map((t) => zoomFrame(plan, ease(t)));
+      for (const [i, frame] of frames.slice(1).entries()) {
+        expect(frame.camera.scale).toBeGreaterThanOrEqual(frames[i].camera.scale);
+        expect(frame.contentScale).toBeGreaterThanOrEqual(frames[i].contentScale);
+      }
+      expect(frames.at(-1)?.contentScale).toBeCloseTo(plan.contentZoom);
+    });
+
+    it("can start from a camera that's already zoomed", () => {
+      const from = { x: -120, y: 40, scale: 1.7 };
+      const { camera } = zoomFrame(planZoom(layout, nodes[0].id, stage, 400, from), 0);
+      expect(camera.x).toBeCloseTo(from.x);
+      expect(camera.y).toBeCloseTo(from.y);
+      expect(camera.scale).toBeCloseTo(from.scale);
+    });
+  });
+
+  describe.each(Object.entries(screens))("framing a group of traces on a %s", (_, { stage, layout: shape }) => {
+    const layout = graph.layouts[shape];
+    it("zooms in on it, centred, never further out than the overview", () => {
+      for (const group of traceGroups) {
+        const plan = planFrameZoom(layout, group.id, traceArea(graph, layout, group), stage);
+        expect(zoomFrame(plan, 0).camera).toEqual(IDENTITY);
+        const { target } = zoomFrame(plan, 1);
+        expect(plan.to.scale, group.id).toBeGreaterThanOrEqual(1 - EPS);
+        expect(target.x + target.width / 2).toBeCloseTo(stage.x + stage.width / 2);
+        expect(target.y + target.height / 2).toBeCloseTo(stage.y + stage.height / 2);
+        // Wherever the camera could get closer than the overview, the whole group is on stage.
+        if (plan.to.scale > 1 + EPS) expect(inside(target, stage), group.id).toBe(true);
+      }
+    });
+
+    it("frames closer when allowed to crop, keeping the group's height on stage", () => {
+      for (const group of traceGroups) {
+        const area = traceArea(graph, layout, group);
+        const plain = planFrameZoom(layout, group.id, area, stage);
+        const cropped = planFrameZoom(layout, group.id, area, stage, IDENTITY, 1.4);
+        expect(cropped.to.scale, group.id).toBeGreaterThanOrEqual(plain.to.scale - EPS);
+        const { target } = zoomFrame(cropped, 1);
+        expect(target.width, group.id).toBeLessThanOrEqual(1.4 * stage.width + EPS);
+        if (cropped.to.scale > 1 + EPS) {
+          expect(target.y, group.id).toBeGreaterThanOrEqual(stage.y - EPS);
+          expect(target.y + target.height, group.id).toBeLessThanOrEqual(stage.y + stage.height + EPS);
+        }
+      }
+    });
   });
 });
 
@@ -131,18 +141,20 @@ describe("a label's place on screen", () => {
 });
 
 describe("internals on bigger screens", () => {
+  const { landscape } = graphs.runtime.layouts;
+
   it("take the same share of the node on a laptop and a big monitor, scaled up to fit", () => {
     const share = (stage: Rect) => {
-      const { target, content } = zoomFrame(planZoom(landscapeLayout, "api", stage, 330), 1);
+      const { target, content } = zoomFrame(planZoom(landscape, "api", stage, 330), 1);
       return content.width / Math.min(target.width, stage.width);
     };
     expect(share(screens.qhd.stage)).toBeCloseTo(share(screens.laptop.stage), 2);
-    expect(planZoom(landscapeLayout, "api", screens.qhd.stage, 330).contentZoom).toBeGreaterThan(1);
+    expect(planZoom(landscape, "api", screens.qhd.stage, 330).contentZoom).toBeGreaterThan(1);
   });
 
   it("aren't scaled up past the stage's height", () => {
     const stage = screens.qhd.stage;
-    const plan = planZoom(landscapeLayout, "api", stage, 1000);
+    const plan = planZoom(landscape, "api", stage, 1000);
     expect(1000 * plan.contentZoom).toBeLessThanOrEqual(stage.height);
   });
 });

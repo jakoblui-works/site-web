@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-import { landscapeLayout, portraitLayout } from "@/lib/infra-graph";
+import type { Graph } from "@/lib/infra-graph";
 
 import { InfraGraph } from "./infra-graph";
 
@@ -53,7 +53,7 @@ const toImageUrl = (svg: SVGSVGElement) => {
  * live blur in pieces, which showed as hard seams. The graph itself is laid out invisibly, to place
  * and draw it.
  */
-export const FrostedGraph = () => {
+export const FrostedGraph = ({ graph }: { graph: Graph }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const layoutRef = useRef<HTMLDivElement>(null);
 
@@ -97,7 +97,7 @@ export const FrostedGraph = () => {
       cancelled = true;
       observer.disconnect();
     };
-  }, []);
+  }, [graph]);
 
   return (
     <div className="xray-frost fixed inset-0">
@@ -106,8 +106,8 @@ export const FrostedGraph = () => {
         ref={layoutRef}
         className="xray-frost-content invisible absolute inset-0 flex h-dvh items-center justify-center"
       >
-        <InfraGraph layout={landscapeLayout} decorative className="hidden size-full lg:block" />
-        <InfraGraph layout={portraitLayout} decorative className="size-full lg:hidden" />
+        <InfraGraph graph={graph} layout={graph.layouts.landscape} decorative className="hidden size-full lg:block" />
+        <InfraGraph graph={graph} layout={graph.layouts.portrait} decorative className="size-full lg:hidden" />
       </div>
     </div>
   );

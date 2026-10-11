@@ -7,8 +7,8 @@ import {
 } from "react";
 
 import { Button } from "@/components/ui/button";
-import { landscapeLayout, portraitLayout } from "@/lib/infra-graph";
-import { NARROW_CROP, traceArea, traceGroups } from "@/lib/trace-groups";
+import type { Graph } from "@/lib/infra-graph";
+import { NARROW_CROP, traceArea } from "@/lib/trace-groups";
 import { cn } from "@/lib/utils";
 import {
   contentWidth,
@@ -55,6 +55,8 @@ const Kbd = ({ children }: { children: string }) => (
 
 type XrayProps = {
   open: boolean;
+  /** The view shown. */
+  graph: Graph;
   /** The selected node or group of traces, which the camera zooms into. */
   selected: string | null;
   /** Select a node or group of traces, or go back to the overview with `null`. */
@@ -66,7 +68,8 @@ type XrayProps = {
  * The interior: fixed behind the page the whole time. The surface's mask decides how much of it
  * shows (a hole under the look-inside panel, or most of the screen when open).
  */
-export const Xray = ({ open, selected, onSelect, onClose }: XrayProps) => {
+export const Xray = ({ open, graph, selected, onSelect, onClose }: XrayProps) => {
+  const { landscape, portrait } = graph.layouts;
   const regionRef = useRef<HTMLElement>(null);
 
   // The latest props for the handlers, so their effects only run when opening, closing or selecting.
@@ -121,7 +124,7 @@ export const Xray = ({ open, selected, onSelect, onClose }: XrayProps) => {
     const stageElement = stageRef.current;
     const content = contentRef.current;
     if (!stageElement || !content) return null;
-    const layout = window.innerWidth >= WIDE ? landscapeLayout : portraitLayout;
+    const layout = window.innerWidth >= WIDE ? landscape : portrait;
     // The stage is the window's clear area; offsets ignore the camera's own transform.
     const stage = {
       x: stageElement.offsetLeft,
@@ -130,10 +133,10 @@ export const Xray = ({ open, selected, onSelect, onClose }: XrayProps) => {
       height: stageElement.offsetHeight,
     };
     content.style.minHeight = "";
-    const group = traceGroups.find((candidate) => candidate.id === id);
+    const group = graph.traceGroups.find((candidate) => candidate.id === id);
     if (group) {
       const crop = window.innerWidth >= WIDE ? 1 : NARROW_CROP;
-      return planFrameZoom(layout, id, traceArea(layout, group), stage, from, crop);
+      return planFrameZoom(layout, id, traceArea(graph, layout, group), stage, from, crop);
     }
     content.style.width = `${contentWidth(stage)}px`;
     return planZoom(layout, id, stage, content.offsetHeight, from);
@@ -308,14 +311,15 @@ export const Xray = ({ open, selected, onSelect, onClose }: XrayProps) => {
 
   // What's zoomed into (or out of): a node, or a group of traces; and this frame of it.
   const shown = selected ?? view?.plan.id ?? null;
-  const shownGroup = traceGroups.some((group) => group.id === shown);
+  const shownGroup = graph.traceGroups.some((group) => group.id === shown);
   const zoom = view && zoomFrame(view.plan, ease(view.t));
   const camera = zoom?.camera ?? IDENTITY;
   const zoomedInto =
     view && !shownGroup
       ? { id: view.plan.id, headerOpacity: 1 - ramp(view.t, 0.15, 0.5) }
       : null;
-  const graph = {
+  const graphProps = {
+    graph,
     selected: shownGroup ? null : shown,
     selectedGroup: shownGroup ? shown : null,
     zoomedInto,
@@ -372,13 +376,13 @@ export const Xray = ({ open, selected, onSelect, onClose }: XrayProps) => {
             className="xray-camera size-full"
           >
             <InfraGraph
-              layout={landscapeLayout}
-              {...graph}
+              layout={landscape}
+              {...graphProps}
               className="hidden size-full lg:block"
             />
             <InfraGraph
-              layout={portraitLayout}
-              {...graph}
+              layout={portrait}
+              {...graphProps}
               className="size-full lg:hidden"
             />
           </div>
@@ -389,8 +393,9 @@ export const Xray = ({ open, selected, onSelect, onClose }: XrayProps) => {
               key={shown}
               ref={interiorRef}
               contentRef={contentRef}
+              graph={graph}
               groupId={shown}
-              layout={window.innerWidth >= WIDE ? landscapeLayout : portraitLayout}
+              layout={window.innerWidth >= WIDE ? landscape : portrait}
               plan={view?.plan ?? null}
               camera={camera}
               // Only once the camera has arrived.
@@ -400,6 +405,7 @@ export const Xray = ({ open, selected, onSelect, onClose }: XrayProps) => {
             <NodeInterior
               key={shown}
               {...frameProps}
+              graph={graph}
               nodeId={shown}
             />
           ))}

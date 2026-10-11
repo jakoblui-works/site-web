@@ -1,7 +1,7 @@
 import { type CSSProperties, type Ref } from "react";
 
-import { edgeId, edges, labelAnchor, type GraphLayout } from "@/lib/infra-graph";
-import { LABEL_STYLE, traceGroups } from "@/lib/trace-groups";
+import { edgeId, labelAnchor, type Graph, type GraphLayout } from "@/lib/infra-graph";
+import { LABEL_STYLE } from "@/lib/trace-groups";
 import { throughCamera, toStage, type Camera, type ZoomPlan } from "@/lib/zoom";
 
 /**
@@ -10,6 +10,7 @@ import { throughCamera, toStage, type Camera, type ZoomPlan } from "@/lib/zoom";
  * hand-placed spot (the layout's `labels`) and follows the camera.
  */
 export const TraceLabels = ({
+  graph,
   groupId,
   layout,
   plan,
@@ -18,6 +19,7 @@ export const TraceLabels = ({
   ref,
   contentRef,
 }: {
+  graph: Graph;
   groupId: string;
   layout: GraphLayout;
   plan: ZoomPlan | null;
@@ -26,7 +28,7 @@ export const TraceLabels = ({
   ref?: Ref<HTMLElement>;
   contentRef?: Ref<HTMLDivElement>;
 }) => {
-  const group = traceGroups.find((candidate) => candidate.id === groupId);
+  const group = graph.traceGroups.find((candidate) => candidate.id === groupId);
   if (!group) return null;
   const titleId = `${groupId}-labels-title`;
   const pxPerUnit = plan ? plan.fit * camera.scale : 1;
@@ -43,7 +45,7 @@ export const TraceLabels = ({
           {group.title} · {group.path}
         </h2>
         {plan &&
-          edges
+          graph.edges
             .filter((edge) => group.edges.includes(edgeId(edge)))
             .map((edge) => {
               const spot = layout.labels?.[edgeId(edge)];
