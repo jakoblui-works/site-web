@@ -55,9 +55,8 @@
   --spacing-header: 4rem;
 }
 
-/* The header's "this opens a menu" hint: a small triangle in the bottom-right corner (`notch`) or
-   bottom-left (`notch-left`), in the text colour unless `--notch-color` says otherwise. The element
-   needs padding on that side to make room for it. */
+/* The logo box's "this opens a menu" hint: a small triangle in the bottom-right corner, in the text
+   colour unless `--notch-color` says otherwise. The element needs right padding to make room for it. */
 @utility notch {
   position: relative;
   &::after {
@@ -80,21 +79,6 @@
   }
   to {
     transform: none;
-  }
-}
-
-@utility notch-left {
-  position: relative;
-  &::after {
-    content: "";
-    position: absolute;
-    left: 3px;
-    bottom: 3px;
-    border: 4px solid transparent;
-    border-left-color: var(--notch-color, currentColor);
-    border-bottom-color: var(--notch-color, currentColor);
-    border-radius: 0 0 0 2px;
-    transition: border-color 150ms ease;
   }
 }
 
