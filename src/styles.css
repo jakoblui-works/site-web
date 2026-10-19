@@ -226,7 +226,7 @@
      transparent inside; the four edge fades add up, so the band is thickest in the corners.
      Its shape is fixed while it's in use: opening only turns its strength up.
    - The hole (--hole-*): on wide screens, a hole in the surface's background under the
-     look-inside panel, so the interior shows through the glass while closed.
+     look-inside panel, so the interior shows through it while closed.
    --xray-strength (0 solid, 1 see-through) is the only thing that animates. */
 @property --xray-strength {
   syntax: "<number>";
@@ -246,7 +246,7 @@
    curve, alpha = 1 - (3t^2 - 2t^3) across the fade (9 stops): gentle at both ends, so the surface
    eases away from the edge and eases out into nothing, and text fades instead of cutting off.
    The fade can differ across (--xray-fade-x) and down (--xray-fade-y).
-   Not masked while closed, so the glass panel's blur still reaches the interior behind it. */
+   Not masked while closed. */
 .xray-surface[data-masked] > .xray-surface-content {
   mask-image:
     linear-gradient(
@@ -335,43 +335,6 @@
   mask-composite: add;
 }
 
-/* Depth around the hole: the surface casts a shadow onto the interior just inside the hole, most
-   along the top edge (lit from above). It fades out as the x-ray opens. It sits between the
-   interior and the surface. */
-.xray-shadow {
-  background: rgb(0 0 0 / 0.65);
-  pointer-events: none;
-}
-.xray-shadow-hole {
-  opacity: calc(1 - var(--xray-strength));
-  /* Only inside the hole: the surface around it is glass now, which it would darken. */
-  clip-path: inset(
-    var(--hole-top) var(--hole-right) var(--hole-bottom) var(--hole-left)
-  );
-  mask-image:
-    linear-gradient(
-      to bottom,
-      black calc(var(--hole-top) + var(--hole-fade) * 0.3),
-      transparent calc(var(--hole-top) + var(--hole-fade) * 1.25 + 28px)
-    ),
-    linear-gradient(
-      to top,
-      black calc(var(--hole-bottom) + var(--hole-fade) * 0.2),
-      transparent calc(var(--hole-bottom) + var(--hole-fade) * 1.1 + 10px)
-    ),
-    linear-gradient(
-      to right,
-      black calc(var(--hole-left) + var(--hole-fade) * 0.35),
-      transparent calc(var(--hole-left) + var(--hole-fade) * 1.3 + 18px)
-    ),
-    linear-gradient(
-      to left,
-      black calc(var(--hole-right) + var(--hole-fade) * 0.35),
-      transparent calc(var(--hole-right) + var(--hole-fade) * 1.3 + 18px)
-    );
-  mask-composite: add;
-}
-
 /* The surface's background (behind the header and the hero): black frosted glass over the
    interior. Not a backdrop blur (inside the masked surface it couldn't reach the interior while the
    x-ray fades): it shows its own blurred, dimmed copy of the interior's graph, lined up with the
@@ -401,15 +364,17 @@
   --xray-switch-height: 2.5rem;
 }
 
-/* The look-inside panel leaves as soon as the x-ray opens, and comes back only once the surface is
-   unmasked again: inside a masked parent its backdrop blur can't reach the interior, so fading it in
-   earlier would make the blur snap on when the mask comes off. */
+/* The look-inside panel leaves as soon as the x-ray opens and comes back as soon as it starts closing,
+   fading in with the rest of the surface. Inside the masked surface its blur can't reach the
+   interior, so it's off until the mask comes off, and then eases in instead of snapping on. */
 .look-inside {
-  transition-property: opacity, backdrop-filter, border-color;
+  transition-property: opacity, background-color, backdrop-filter;
 }
-.xray-surface[data-open] .look-inside,
-.xray-surface[data-masked] .look-inside {
+.xray-surface[data-open] .look-inside {
   opacity: 0;
+}
+.xray-surface[data-masked] .look-inside {
+  backdrop-filter: blur(0);
 }
 
 /* Open, clicks go through the see-through surface to the interior. */

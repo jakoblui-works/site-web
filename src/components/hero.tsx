@@ -29,11 +29,8 @@ export const Hero = ({
     >
       <div className="mx-auto grid w-full max-w-6xl gap-10 px-4 py-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:gap-16 lg:py-16">
         <div>
-          <p className="inline-flex items-center gap-2 rounded-full border bg-surface px-3 py-1 font-mono text-xs font-medium">
-            <span className="relative flex size-2">
-              <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75 motion-reduce:animate-none" />
-              <span className="relative inline-flex size-2 rounded-full bg-emerald-400" />
-            </span>
+          <p className="inline-flex items-center gap-2 font-mono text-[13px] font-medium text-muted-foreground">
+            <span aria-hidden className="size-2 rounded-full bg-emerald-400" />
             Open to new roles
           </p>
           <h1 className="mt-6 font-heading text-[clamp(2.25rem,10.5vw,3.75rem)] leading-none font-bold tracking-[-0.045em] whitespace-nowrap text-neutral-200 lg:text-[clamp(4rem,6vw,5.5rem)]">
