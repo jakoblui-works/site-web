@@ -5,6 +5,37 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Jakob Lui - Product Engineer</title>
+    <!-- Shared by all sites. The SVG for modern browsers; the ICO for the rest (`sizes="32x32"`,
+         not "any", or Chrome picks the ICO over the SVG). Bitmaps come from `pnpm icons`. -->
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <!-- Static on purpose: link previews and crawlers don't run JavaScript, so every URL
+         (including `?xray=…`) shares these. -->
+    <meta
+      name="description"
+      content="I build products end to end, from interface to infrastructure. Half the job is knowing what not to build."
+    />
+    <link rel="canonical" href="https://jakoblui.com/" />
+    <!-- The surface's background (`.xray-surface-bg`), in hex. -->
+    <meta name="theme-color" content="#010002" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://jakoblui.com/" />
+    <meta property="og:title" content="Jakob Lui - Product Engineer" />
+    <meta
+      property="og:description"
+      content="I build products end to end, from interface to infrastructure. Half the job is knowing what not to build."
+    />
+    <meta property="og:image" content="https://jakoblui.com/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Product Engineer, Jakob Lui Abramson, over a circuit-board diagram of the jakoblui.com infrastructure."
+    />
+    <!-- Without it, Discord and X show a small thumbnail instead of the large card. -->
+    <meta name="twitter:card" content="summary_large_image" />
   </head>
   <body>
     <div id="app"></div>
