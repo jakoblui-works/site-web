@@ -4,6 +4,7 @@
 @import "@fontsource-variable/inter";
 @import "@fontsource-variable/space-grotesk";
 @import "@fontsource-variable/jetbrains-mono";
+@import "@fontsource-variable/sora";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -51,7 +52,50 @@
 
 /* Page header height, border included (`h-header`). Full-height layouts subtract it from the viewport. */
 @theme {
-  --spacing-header: 3.5rem;
+  --spacing-header: 4rem;
+}
+
+/* The header's "this opens a menu" hint: a small triangle in the bottom-right corner (`notch`) or
+   bottom-left (`notch-left`), in the text colour unless `--notch-color` says otherwise. The element
+   needs padding on that side to make room for it. */
+@utility notch {
+  position: relative;
+  &::after {
+    content: "";
+    position: absolute;
+    right: 3px;
+    bottom: 3px;
+    border: 4px solid transparent;
+    border-right-color: var(--notch-color, currentColor);
+    border-bottom-color: var(--notch-color, currentColor);
+    border-radius: 0 0 2px 0;
+    transition: border-color 150ms ease;
+  }
+}
+/* The site switcher's boxes slide down out from under the logo's box (`SiteSwitcher`), starting
+   fully hidden above the clipping edge, gap included. */
+@keyframes slide-out {
+  from {
+    transform: translateY(calc(-100% - var(--gap)));
+  }
+  to {
+    transform: none;
+  }
+}
+
+@utility notch-left {
+  position: relative;
+  &::after {
+    content: "";
+    position: absolute;
+    left: 3px;
+    bottom: 3px;
+    border: 4px solid transparent;
+    border-left-color: var(--notch-color, currentColor);
+    border-bottom-color: var(--notch-color, currentColor);
+    border-radius: 0 0 0 2px;
+    transition: border-color 150ms ease;
+  }
 }
 
 @theme inline {
@@ -59,6 +103,7 @@
   --color-surface: var(--surface);
   --font-sans: "Inter Variable", sans-serif;
   --font-mono: "JetBrains Mono Variable", monospace;
+  --font-logo: "Sora Variable", sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -210,7 +255,7 @@
       rgb(0 0 0 / 0.957) calc(var(--xray-top) + var(--xray-fade-y) * 0.125),
       rgb(0 0 0 / 0.844) calc(var(--xray-top) + var(--xray-fade-y) * 0.25),
       rgb(0 0 0 / 0.684) calc(var(--xray-top) + var(--xray-fade-y) * 0.375),
-      rgb(0 0 0 / 0.500) calc(var(--xray-top) + var(--xray-fade-y) * 0.5),
+      rgb(0 0 0 / 0.5) calc(var(--xray-top) + var(--xray-fade-y) * 0.5),
       rgb(0 0 0 / 0.316) calc(var(--xray-top) + var(--xray-fade-y) * 0.625),
       rgb(0 0 0 / 0.156) calc(var(--xray-top) + var(--xray-fade-y) * 0.75),
       rgb(0 0 0 / 0.043) calc(var(--xray-top) + var(--xray-fade-y) * 0.875),
@@ -222,7 +267,7 @@
       rgb(0 0 0 / 0.957) calc(var(--xray-bottom) + var(--xray-fade-y) * 0.125),
       rgb(0 0 0 / 0.844) calc(var(--xray-bottom) + var(--xray-fade-y) * 0.25),
       rgb(0 0 0 / 0.684) calc(var(--xray-bottom) + var(--xray-fade-y) * 0.375),
-      rgb(0 0 0 / 0.500) calc(var(--xray-bottom) + var(--xray-fade-y) * 0.5),
+      rgb(0 0 0 / 0.5) calc(var(--xray-bottom) + var(--xray-fade-y) * 0.5),
       rgb(0 0 0 / 0.316) calc(var(--xray-bottom) + var(--xray-fade-y) * 0.625),
       rgb(0 0 0 / 0.156) calc(var(--xray-bottom) + var(--xray-fade-y) * 0.75),
       rgb(0 0 0 / 0.043) calc(var(--xray-bottom) + var(--xray-fade-y) * 0.875),
@@ -234,7 +279,7 @@
       rgb(0 0 0 / 0.957) calc(var(--xray-left) + var(--xray-fade-x) * 0.125),
       rgb(0 0 0 / 0.844) calc(var(--xray-left) + var(--xray-fade-x) * 0.25),
       rgb(0 0 0 / 0.684) calc(var(--xray-left) + var(--xray-fade-x) * 0.375),
-      rgb(0 0 0 / 0.500) calc(var(--xray-left) + var(--xray-fade-x) * 0.5),
+      rgb(0 0 0 / 0.5) calc(var(--xray-left) + var(--xray-fade-x) * 0.5),
       rgb(0 0 0 / 0.316) calc(var(--xray-left) + var(--xray-fade-x) * 0.625),
       rgb(0 0 0 / 0.156) calc(var(--xray-left) + var(--xray-fade-x) * 0.75),
       rgb(0 0 0 / 0.043) calc(var(--xray-left) + var(--xray-fade-x) * 0.875),
@@ -246,26 +291,47 @@
       rgb(0 0 0 / 0.957) calc(var(--xray-right) + var(--xray-fade-x) * 0.125),
       rgb(0 0 0 / 0.844) calc(var(--xray-right) + var(--xray-fade-x) * 0.25),
       rgb(0 0 0 / 0.684) calc(var(--xray-right) + var(--xray-fade-x) * 0.375),
-      rgb(0 0 0 / 0.500) calc(var(--xray-right) + var(--xray-fade-x) * 0.5),
+      rgb(0 0 0 / 0.5) calc(var(--xray-right) + var(--xray-fade-x) * 0.5),
       rgb(0 0 0 / 0.316) calc(var(--xray-right) + var(--xray-fade-x) * 0.625),
       rgb(0 0 0 / 0.156) calc(var(--xray-right) + var(--xray-fade-x) * 0.75),
       rgb(0 0 0 / 0.043) calc(var(--xray-right) + var(--xray-fade-x) * 0.875),
       transparent calc(var(--xray-right) + var(--xray-fade-x))
     ),
-    linear-gradient(rgb(0 0 0 / calc(1 - var(--xray-strength))), rgb(0 0 0 / calc(1 - var(--xray-strength))));
+    linear-gradient(
+      rgb(0 0 0 / calc(1 - var(--xray-strength))),
+      rgb(0 0 0 / calc(1 - var(--xray-strength)))
+    );
   mask-composite: add;
 }
-
 
 /* The surface's background: has the hole under the panel (none on phones). The hole fills in as the
    strength rises, so the whole surface fades evenly instead of leaving a clear rectangle. */
 .xray-hole {
   mask-image:
-    linear-gradient(to bottom, black var(--hole-top), transparent calc(var(--hole-top) + var(--hole-fade))),
-    linear-gradient(to top, black var(--hole-bottom), transparent calc(var(--hole-bottom) + var(--hole-fade))),
-    linear-gradient(to right, black var(--hole-left), transparent calc(var(--hole-left) + var(--hole-fade))),
-    linear-gradient(to left, black var(--hole-right), transparent calc(var(--hole-right) + var(--hole-fade))),
-    linear-gradient(rgb(0 0 0 / var(--xray-strength)), rgb(0 0 0 / var(--xray-strength)));
+    linear-gradient(
+      to bottom,
+      black var(--hole-top),
+      transparent calc(var(--hole-top) + var(--hole-fade))
+    ),
+    linear-gradient(
+      to top,
+      black var(--hole-bottom),
+      transparent calc(var(--hole-bottom) + var(--hole-fade))
+    ),
+    linear-gradient(
+      to right,
+      black var(--hole-left),
+      transparent calc(var(--hole-left) + var(--hole-fade))
+    ),
+    linear-gradient(
+      to left,
+      black var(--hole-right),
+      transparent calc(var(--hole-right) + var(--hole-fade))
+    ),
+    linear-gradient(
+      rgb(0 0 0 / var(--xray-strength)),
+      rgb(0 0 0 / var(--xray-strength))
+    );
   mask-composite: add;
 }
 
@@ -279,12 +345,30 @@
 .xray-shadow-hole {
   opacity: calc(1 - var(--xray-strength));
   /* Only inside the hole: the surface around it is glass now, which it would darken. */
-  clip-path: inset(var(--hole-top) var(--hole-right) var(--hole-bottom) var(--hole-left));
+  clip-path: inset(
+    var(--hole-top) var(--hole-right) var(--hole-bottom) var(--hole-left)
+  );
   mask-image:
-    linear-gradient(to bottom, black calc(var(--hole-top) + var(--hole-fade) * 0.3), transparent calc(var(--hole-top) + var(--hole-fade) * 1.25 + 28px)),
-    linear-gradient(to top, black calc(var(--hole-bottom) + var(--hole-fade) * 0.2), transparent calc(var(--hole-bottom) + var(--hole-fade) * 1.1 + 10px)),
-    linear-gradient(to right, black calc(var(--hole-left) + var(--hole-fade) * 0.35), transparent calc(var(--hole-left) + var(--hole-fade) * 1.3 + 18px)),
-    linear-gradient(to left, black calc(var(--hole-right) + var(--hole-fade) * 0.35), transparent calc(var(--hole-right) + var(--hole-fade) * 1.3 + 18px));
+    linear-gradient(
+      to bottom,
+      black calc(var(--hole-top) + var(--hole-fade) * 0.3),
+      transparent calc(var(--hole-top) + var(--hole-fade) * 1.25 + 28px)
+    ),
+    linear-gradient(
+      to top,
+      black calc(var(--hole-bottom) + var(--hole-fade) * 0.2),
+      transparent calc(var(--hole-bottom) + var(--hole-fade) * 1.1 + 10px)
+    ),
+    linear-gradient(
+      to right,
+      black calc(var(--hole-left) + var(--hole-fade) * 0.35),
+      transparent calc(var(--hole-left) + var(--hole-fade) * 1.3 + 18px)
+    ),
+    linear-gradient(
+      to left,
+      black calc(var(--hole-right) + var(--hole-fade) * 0.35),
+      transparent calc(var(--hole-right) + var(--hole-fade) * 1.3 + 18px)
+    );
   mask-composite: add;
 }
 
@@ -383,7 +467,9 @@
 .xray-interior:not([data-open]) .xray-content {
   opacity: 0.55;
 }
-:root:has(.look-inside:hover, .look-inside:focus-visible) .xray-interior:not([data-open]) .xray-content {
+:root:has(.look-inside:hover, .look-inside:focus-visible)
+  .xray-interior:not([data-open])
+  .xray-content {
   opacity: 0.9;
 }
 

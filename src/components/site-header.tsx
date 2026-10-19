@@ -1,27 +1,27 @@
 import { Link } from "@tanstack/react-router";
 
-import { ProjectsMenu } from "@/components/projects-menu";
+import { SiteSwitcher } from "@/components/site-switcher";
+import { WorkMenu } from "@/components/work-menu";
 import { projects } from "@/lib/projects";
+import { hub, sites } from "@/lib/sites";
 
+// The logo reads as the domain: the box is the current subdomain (and the switcher to the other
+// sites), the rest links to the current site's root.
 export const SiteHeader = () => {
   return (
-    <header className="h-header border-b">
-      <div className="mx-auto flex h-full w-full max-w-6xl items-center justify-between px-4">
-        <Link
-          to="/"
-          className="flex items-center gap-2.5 rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-        >
-          <span
-            aria-hidden
-            className="flex size-8 items-center justify-center rounded-md bg-primary text-base font-extrabold tracking-tight text-primary-foreground"
+    <header className="h-header pt-3">
+      <div className="mx-auto flex h-full w-full max-w-6xl items-center justify-between px-4 rounded-xl ">
+        <div className="flex items-center gap-1.75 font-logo text-2xl leading-none font-semibold tracking-[-0.03em]">
+          <SiteSwitcher sites={sites} current={hub} />
+          <Link
+            to="/"
+            aria-label="jakoblui home"
+            className="rounded-md text-foreground outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
           >
-            JL
-          </span>
-          <span className="text-lg font-semibold tracking-tight text-foreground">
-            Jakob Lui
-          </span>
-        </Link>
-        <ProjectsMenu projects={projects} />
+            <span className="text-primary">.</span>jakoblui
+          </Link>
+        </div>
+        <WorkMenu projects={projects} />
       </div>
     </header>
   );
