@@ -47,3 +47,9 @@ export const SeveralProjects: Story = {
   args: { projects: manyProjects },
   play: opensWithEveryProject,
 };
+
+// Phones show only the icon; the button keeps its name.
+export const Phone: Story = {
+  globals: { viewport: { value: "mobile1" } },
+  play: opensWithEveryProject,
+};
