@@ -1,4 +1,4 @@
-import { FileTextIcon, MapPinIcon, ScanEyeIcon } from "lucide-react";
+import { ArrowRightIcon, FileTextIcon, MapPinIcon } from "lucide-react";
 import { type Ref } from "react";
 
 import { buttonVariants } from "@/components/ui/button";
@@ -27,7 +27,7 @@ export const Hero = ({
       inert={inert}
       className="flex min-h-[calc(100dvh-var(--spacing-header))] items-center"
     >
-      <div className="mx-auto grid w-full max-w-6xl gap-10 px-4 py-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:gap-16 lg:py-16">
+      <div className="mx-auto grid w-full max-w-6xl gap-10 px-4 pt-12 pb-24 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:gap-16 lg:py-16">
         <div>
           <p className="inline-flex items-center gap-2 font-mono text-[13px] font-medium text-muted-foreground">
             <span aria-hidden className="size-2 rounded-full bg-emerald-400" />
@@ -86,18 +86,17 @@ export const Hero = ({
                 pick a role and skills → get a PDF
               </p>
             </div>
-            {/* Phones get a button instead of the panel, so the hero fits without scrolling. */}
+            {/* Phones get a button instead of the panel, so the hero fits without scrolling: the
+                panel's label, full width and fixed to the bottom of the screen. Blurred behind,
+                since the page scrolls under it. */}
             <button
               ref={buttonRef}
               type="button"
               onClick={onLookInside}
-              className={cn(
-                buttonVariants({ variant: "outline", size: "lg" }),
-                "h-12 gap-2 px-5 text-base lg:hidden",
-              )}
+              className="look-inside-button fixed inset-x-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-20 flex h-12 cursor-pointer items-center justify-center gap-2 rounded-lg bg-white/10 text-base font-semibold text-white outline-none backdrop-blur-md transition-colors hover:bg-white/18 focus-visible:bg-white/18 focus-visible:ring-3 focus-visible:ring-ring/50 lg:hidden"
             >
-              <ScanEyeIcon className="size-5" aria-hidden />
               Look inside
+              <ArrowRightIcon className="size-4.5" aria-hidden />
             </button>
           </div>
         </div>

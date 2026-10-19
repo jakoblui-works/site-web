@@ -373,6 +373,14 @@
 .xray-surface[data-open] .look-inside {
   opacity: 0;
 }
+/* The phone's look-inside button is fixed to the bottom of the screen, where the surface stays
+   opaque while open, so it has to leave on its own. */
+.look-inside-button {
+  transition-property: opacity, background-color;
+}
+.xray-surface[data-open] .look-inside-button {
+  opacity: 0;
+}
 .xray-surface[data-masked] .look-inside {
   backdrop-filter: blur(0);
 }
