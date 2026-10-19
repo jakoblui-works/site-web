@@ -3,7 +3,7 @@ import { expect, screen } from "storybook/test";
 
 import { projects } from "@/lib/projects";
 
-import { ProjectsMenu } from "./projects-menu";
+import { WorkMenu } from "./work-menu";
 
 const manyProjects = [
   ...projects,
@@ -14,21 +14,21 @@ const manyProjects = [
   },
 ];
 
-const meta: Meta<typeof ProjectsMenu> = {
-  title: "Components/ProjectsMenu",
-  component: ProjectsMenu,
+const meta: Meta<typeof WorkMenu> = {
+  title: "Components/WorkMenu",
+  component: WorkMenu,
   args: { projects },
 };
 export default meta;
 
-type Story = StoryObj<typeof ProjectsMenu>;
+type Story = StoryObj<typeof WorkMenu>;
 
 const opensWithEveryProject: Story["play"] = async ({
   args,
   canvas,
   userEvent,
 }) => {
-  await userEvent.click(canvas.getByRole("button", { name: "Projects" }));
+  await userEvent.click(canvas.getByRole("button", { name: "work" }));
 
   // The popup is portalled outside the canvas.
   for (const project of args.projects) {

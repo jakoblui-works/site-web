@@ -6,7 +6,7 @@ type Window = Record<Side | "fade-x" | "fade-y", number>;
 
 /** Matches the strength transition in `styles.css`. */
 const ANIMATION_MS = 800;
-/** The hole under the panel only softens at its very edge (the glass covers it). */
+/** The hole under the panel only softens at its very edge (the panel covers it). */
 const HOLE_FADE = 12;
 /** Wide screens show the look-inside panel; phones a button instead (Tailwind's `lg`). */
 const WIDE = 1024;

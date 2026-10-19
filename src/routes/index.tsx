@@ -47,16 +47,12 @@ const HomeComponent = () => {
   return (
     <>
       {/* The surface (header and hero), in front of the interior. It holds the x-ray's mask values and
-          strength, which its shadow, its background and (while the x-ray is in use) its content read. */}
+          strength, which its background and (while the x-ray is in use) its content read. */}
       <div
         ref={surfaceRef}
         data-open={isOpen || undefined}
         className="xray-surface relative z-10"
       >
-        <div
-          aria-hidden
-          className="xray-shadow xray-shadow-hole absolute inset-0 z-0"
-        />
         <div className="xray-surface-content relative z-10">
           {/* Frosted glass: a blurred copy of the interior, lined up with the real one, under black.
               It's ordinary content, so the x-ray fades it like the rest of the surface. */}
