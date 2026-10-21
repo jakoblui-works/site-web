@@ -414,11 +414,13 @@ export const Xray = ({
               <InfraGraph
                 layout={landscape}
                 {...graphProps}
+                grid
                 className="hidden size-full lg:block"
               />
               <InfraGraph
                 layout={portrait}
                 {...graphProps}
+                grid
                 className="size-full lg:hidden"
               />
             </div>
@@ -432,12 +434,14 @@ export const Xray = ({
                   graph={graphs[leaving]}
                   layout={graphs[leaving].layouts.landscape}
                   decorative
+                  grid
                   className="hidden size-full lg:block"
                 />
                 <InfraGraph
                   graph={graphs[leaving]}
                   layout={graphs[leaving].layouts.portrait}
                   decorative
+                  grid
                   className="size-full lg:hidden"
                 />
               </div>

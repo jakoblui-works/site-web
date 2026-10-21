@@ -3,6 +3,7 @@ import { useId, type KeyboardEvent } from "react";
 import {
   edgeId,
   edgeRoute,
+  GRID,
   type Graph,
   type GraphEdge,
   type GraphLayout,
@@ -38,6 +39,9 @@ const withGap = (route: Point[], gap: number): Point[] => {
 
 const toPoints = (route: Point[]) => route.map(({ x, y }) => `${x},${y}`).join(" ");
 
+/** How far the dot grid reaches past the layout on every side (a multiple of `GRID`), so it fills the screen. */
+const GRID_REACH = 4000;
+
 /** Screw holes in the board's corners, inset from its edge. */
 const SCREW_INSET = 18;
 
@@ -60,6 +64,8 @@ type InfraGraphProps = {
   fit?: "contain" | "cover";
   /** Purely visual (e.g. inside a button that has its own label): hidden from assistive tech. */
   decorative?: boolean;
+  /** Draws the dot grid behind it, out past its edges, so the grid moves and scales with the graph. */
+  grid?: boolean;
   /** The selected node: it and its traces stay bright, everything else dims. */
   selected?: string | null;
   /** The selected group of traces: its traces and the parts they connect stay bright. */
@@ -76,6 +82,7 @@ export const InfraGraph = ({
   layout,
   fit = "contain",
   decorative = false,
+  grid = false,
   selected = null,
   selectedGroup = null,
   onSelect,
@@ -85,7 +92,7 @@ export const InfraGraph = ({
   const id = useId();
   const arrowId = `${id}-arrow`;
   const textureId = `${id}-texture`;
-  const titleId = `${id}-title`;
+  const gridId = `${id}-grid`;
   const { node: size, casing, positions } = layout;
   const group = graph.traceGroups.find((candidate) => candidate.id === selectedGroup);
   // What stays bright: everything, or the selected node and its traces, or the selected group.
@@ -121,13 +128,11 @@ export const InfraGraph = ({
       preserveAspectRatio={fit === "cover" ? "xMidYMid slice" : "xMidYMid meet"}
       {...(decorative
         ? { "aria-hidden": true }
-        : // With buttons inside it's a group: an "img" would hide them from assistive tech.
-          { role: onSelect ? "group" : "img", "aria-labelledby": titleId })}
-      className={cn("h-auto w-full", className)}
+        : // With buttons inside it's a group: an "img" would hide them from assistive tech. Named by
+          // `aria-label`, not a <title>, which browsers also show as a tooltip.
+          { role: onSelect ? "group" : "img", "aria-label": graph.description })}
+      className={cn("h-auto w-full", grid && "overflow-visible", className)}
     >
-      {!decorative && (
-        <title id={titleId}>{graph.description}</title>
-      )}
       <defs>
         <marker
           id={arrowId}
@@ -150,7 +155,30 @@ export const InfraGraph = ({
         >
           <line x1="0" y1="0" x2="0" y2="14" className="stroke-violet-200/[0.05] [stroke-width:1]" />
         </pattern>
+        {/* A dot on every multiple of `GRID` (the tile is offset so its dot sits on the corner). The
+            dots grow with the camera, like the rest of the board. */}
+        <pattern
+          id={gridId}
+          x={-GRID / 2}
+          y={-GRID / 2}
+          width={GRID}
+          height={GRID}
+          patternUnits="userSpaceOnUse"
+        >
+          <circle cx={GRID / 2} cy={GRID / 2} r={1} className="fill-foreground/16" />
+        </pattern>
       </defs>
+
+      {grid && (
+        <rect
+          x={-GRID_REACH}
+          y={-GRID_REACH}
+          width={layout.width + 2 * GRID_REACH}
+          height={layout.height + 2 * GRID_REACH}
+          fill={`url(#${gridId})`}
+          className="pointer-events-none"
+        />
+      )}
 
       <g>
         <rect

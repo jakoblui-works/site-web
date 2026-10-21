@@ -393,16 +393,6 @@
   }
 }
 
-/* The dot grid, behind the graph, so the droplet's board and the nodes cover it. On the content
-   rather than the interior, so dimming the content (closed) can't make the board see-through. */
-.xray-content {
-  background-image: radial-gradient(
-    color-mix(in oklch, var(--foreground) 16%, transparent) 1px,
-    transparent 1px
-  );
-  background-size: 24px 24px;
-}
-
 /* Fine grain on the interior's background: dithers the edge band's gradient over the dark
    interior (otherwise it bands into faint rings) and gives the cavity some texture. */
 .xray-interior::before {
