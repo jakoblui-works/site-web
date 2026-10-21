@@ -44,7 +44,11 @@ export const Hero = ({
       inert={inert}
       className="flex min-h-[calc(100dvh-var(--spacing-header))] items-center"
     >
-      <div className="mx-auto grid w-full max-w-6xl gap-10 px-4 pt-12 pb-24 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:gap-16 lg:py-16">
+      {/* The open x-ray's window always covers this, so the hero never shows on its frost. */}
+      <div
+        data-xray-cover
+        className="mx-auto grid w-full max-w-6xl gap-10 px-4 pt-12 pb-24 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:gap-16 lg:py-16"
+      >
         <div>
           <p className="inline-flex items-center gap-2 font-mono text-[13px] font-medium text-muted-foreground">
             <span aria-hidden className="size-2 rounded-full bg-emerald-400" />

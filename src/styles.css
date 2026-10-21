@@ -205,65 +205,17 @@
 }
 
 /* X-ray: the interior is fixed on top of the page (the surface: header and hero) and seen through a
-   window: a frosted-winter-window gradient, transparent at the screen's edges, where the surface
-   shows through, and opaque inside; the four edge fades multiply, so the rim is thickest in the
-   corners. The window's shape is fixed (px insets from the screen's edges, set by `useXrayWindow`);
-   only the interior's opacity animates (0 closed, 1 open), which browsers do cheaply, Firefox too
-   (it redrew an animated mask on every frame). Each edge eases in along a smoothstep curve, alpha =
-   3t^2 - 2t^3 across the fade (9 stops): gentle at both ends, so the surface eases away from the
-   edge and text fades out instead of cutting off. The fade can differ across (--xray-fade-x) and
-   down (--xray-fade-y). Closed, the look-inside panel shows a picture of the interior instead. */
+   window: frosted glass that turns into clear glass over a short band (`BAND`), transparent where
+   the surface shows through, opaque inside. The window is a rounded rectangle covering the graph's
+   clear area and the hero, its fade reaching into the header (`xrayWindow`); a blurred rounded
+   rectangle, which gradients can't draw, so it's baked into an image of the screen by
+   `useXrayWindow`. The window's shape is fixed; only the interior's opacity animates (0 closed, 1
+   open), which browsers do cheaply, Firefox too (it redrew an animated mask on every frame). Closed,
+   the look-inside panel shows a picture of the interior instead. */
 .xray-interior {
-  mask-image:
-    linear-gradient(
-      to bottom,
-      transparent var(--xray-top),
-      rgb(0 0 0 / 0.043) calc(var(--xray-top) + var(--xray-fade-y) * 0.125),
-      rgb(0 0 0 / 0.156) calc(var(--xray-top) + var(--xray-fade-y) * 0.25),
-      rgb(0 0 0 / 0.316) calc(var(--xray-top) + var(--xray-fade-y) * 0.375),
-      rgb(0 0 0 / 0.5) calc(var(--xray-top) + var(--xray-fade-y) * 0.5),
-      rgb(0 0 0 / 0.684) calc(var(--xray-top) + var(--xray-fade-y) * 0.625),
-      rgb(0 0 0 / 0.844) calc(var(--xray-top) + var(--xray-fade-y) * 0.75),
-      rgb(0 0 0 / 0.957) calc(var(--xray-top) + var(--xray-fade-y) * 0.875),
-      black calc(var(--xray-top) + var(--xray-fade-y))
-    ),
-    linear-gradient(
-      to top,
-      transparent var(--xray-bottom),
-      rgb(0 0 0 / 0.043) calc(var(--xray-bottom) + var(--xray-fade-y) * 0.125),
-      rgb(0 0 0 / 0.156) calc(var(--xray-bottom) + var(--xray-fade-y) * 0.25),
-      rgb(0 0 0 / 0.316) calc(var(--xray-bottom) + var(--xray-fade-y) * 0.375),
-      rgb(0 0 0 / 0.5) calc(var(--xray-bottom) + var(--xray-fade-y) * 0.5),
-      rgb(0 0 0 / 0.684) calc(var(--xray-bottom) + var(--xray-fade-y) * 0.625),
-      rgb(0 0 0 / 0.844) calc(var(--xray-bottom) + var(--xray-fade-y) * 0.75),
-      rgb(0 0 0 / 0.957) calc(var(--xray-bottom) + var(--xray-fade-y) * 0.875),
-      black calc(var(--xray-bottom) + var(--xray-fade-y))
-    ),
-    linear-gradient(
-      to right,
-      transparent var(--xray-left),
-      rgb(0 0 0 / 0.043) calc(var(--xray-left) + var(--xray-fade-x) * 0.125),
-      rgb(0 0 0 / 0.156) calc(var(--xray-left) + var(--xray-fade-x) * 0.25),
-      rgb(0 0 0 / 0.316) calc(var(--xray-left) + var(--xray-fade-x) * 0.375),
-      rgb(0 0 0 / 0.5) calc(var(--xray-left) + var(--xray-fade-x) * 0.5),
-      rgb(0 0 0 / 0.684) calc(var(--xray-left) + var(--xray-fade-x) * 0.625),
-      rgb(0 0 0 / 0.844) calc(var(--xray-left) + var(--xray-fade-x) * 0.75),
-      rgb(0 0 0 / 0.957) calc(var(--xray-left) + var(--xray-fade-x) * 0.875),
-      black calc(var(--xray-left) + var(--xray-fade-x))
-    ),
-    linear-gradient(
-      to left,
-      transparent var(--xray-right),
-      rgb(0 0 0 / 0.043) calc(var(--xray-right) + var(--xray-fade-x) * 0.125),
-      rgb(0 0 0 / 0.156) calc(var(--xray-right) + var(--xray-fade-x) * 0.25),
-      rgb(0 0 0 / 0.316) calc(var(--xray-right) + var(--xray-fade-x) * 0.375),
-      rgb(0 0 0 / 0.5) calc(var(--xray-right) + var(--xray-fade-x) * 0.5),
-      rgb(0 0 0 / 0.684) calc(var(--xray-right) + var(--xray-fade-x) * 0.625),
-      rgb(0 0 0 / 0.844) calc(var(--xray-right) + var(--xray-fade-x) * 0.75),
-      rgb(0 0 0 / 0.957) calc(var(--xray-right) + var(--xray-fade-x) * 0.875),
-      black calc(var(--xray-right) + var(--xray-fade-x))
-    );
-  mask-composite: intersect;
+  mask-image: var(--xray-window);
+  mask-size: 100% 100%;
+  mask-repeat: no-repeat;
   opacity: 0;
   transition: opacity 800ms ease-in-out;
 }
@@ -272,65 +224,19 @@
 }
 
 /* Once open (the fade done, `data-settled`), the same picture the other way round: the interior
-   behind, unmasked, and the surface over it with the window's complement as its mask (the four edge
-   fades added, as px insets relative to the surface, set by `useXrayWindow`). A zoom then only
-   changes the interior, which Firefox would otherwise have to mask again on every frame. Closing
-   turns it back at once, before the fade. */
+   behind, unmasked, and the surface over it with the window's complement (the rim) as its mask,
+   placed where the screen is on the surface (set by `useXrayWindow`). A zoom then only changes the
+   interior, which Firefox would otherwise have to mask again on every frame. Closing turns it back
+   at once, before the fade. */
 .xray-surface[data-settled] ~ .xray-interior {
   z-index: 0;
   mask-image: none;
 }
 .xray-surface[data-settled] > .xray-surface-content {
-  mask-image:
-    linear-gradient(
-      to bottom,
-      black var(--xray-top),
-      rgb(0 0 0 / 0.957) calc(var(--xray-top) + var(--xray-fade-y) * 0.125),
-      rgb(0 0 0 / 0.844) calc(var(--xray-top) + var(--xray-fade-y) * 0.25),
-      rgb(0 0 0 / 0.684) calc(var(--xray-top) + var(--xray-fade-y) * 0.375),
-      rgb(0 0 0 / 0.5) calc(var(--xray-top) + var(--xray-fade-y) * 0.5),
-      rgb(0 0 0 / 0.316) calc(var(--xray-top) + var(--xray-fade-y) * 0.625),
-      rgb(0 0 0 / 0.156) calc(var(--xray-top) + var(--xray-fade-y) * 0.75),
-      rgb(0 0 0 / 0.043) calc(var(--xray-top) + var(--xray-fade-y) * 0.875),
-      transparent calc(var(--xray-top) + var(--xray-fade-y))
-    ),
-    linear-gradient(
-      to top,
-      black var(--xray-bottom),
-      rgb(0 0 0 / 0.957) calc(var(--xray-bottom) + var(--xray-fade-y) * 0.125),
-      rgb(0 0 0 / 0.844) calc(var(--xray-bottom) + var(--xray-fade-y) * 0.25),
-      rgb(0 0 0 / 0.684) calc(var(--xray-bottom) + var(--xray-fade-y) * 0.375),
-      rgb(0 0 0 / 0.5) calc(var(--xray-bottom) + var(--xray-fade-y) * 0.5),
-      rgb(0 0 0 / 0.316) calc(var(--xray-bottom) + var(--xray-fade-y) * 0.625),
-      rgb(0 0 0 / 0.156) calc(var(--xray-bottom) + var(--xray-fade-y) * 0.75),
-      rgb(0 0 0 / 0.043) calc(var(--xray-bottom) + var(--xray-fade-y) * 0.875),
-      transparent calc(var(--xray-bottom) + var(--xray-fade-y))
-    ),
-    linear-gradient(
-      to right,
-      black var(--xray-left),
-      rgb(0 0 0 / 0.957) calc(var(--xray-left) + var(--xray-fade-x) * 0.125),
-      rgb(0 0 0 / 0.844) calc(var(--xray-left) + var(--xray-fade-x) * 0.25),
-      rgb(0 0 0 / 0.684) calc(var(--xray-left) + var(--xray-fade-x) * 0.375),
-      rgb(0 0 0 / 0.5) calc(var(--xray-left) + var(--xray-fade-x) * 0.5),
-      rgb(0 0 0 / 0.316) calc(var(--xray-left) + var(--xray-fade-x) * 0.625),
-      rgb(0 0 0 / 0.156) calc(var(--xray-left) + var(--xray-fade-x) * 0.75),
-      rgb(0 0 0 / 0.043) calc(var(--xray-left) + var(--xray-fade-x) * 0.875),
-      transparent calc(var(--xray-left) + var(--xray-fade-x))
-    ),
-    linear-gradient(
-      to left,
-      black var(--xray-right),
-      rgb(0 0 0 / 0.957) calc(var(--xray-right) + var(--xray-fade-x) * 0.125),
-      rgb(0 0 0 / 0.844) calc(var(--xray-right) + var(--xray-fade-x) * 0.25),
-      rgb(0 0 0 / 0.684) calc(var(--xray-right) + var(--xray-fade-x) * 0.375),
-      rgb(0 0 0 / 0.5) calc(var(--xray-right) + var(--xray-fade-x) * 0.5),
-      rgb(0 0 0 / 0.316) calc(var(--xray-right) + var(--xray-fade-x) * 0.625),
-      rgb(0 0 0 / 0.156) calc(var(--xray-right) + var(--xray-fade-x) * 0.75),
-      rgb(0 0 0 / 0.043) calc(var(--xray-right) + var(--xray-fade-x) * 0.875),
-      transparent calc(var(--xray-right) + var(--xray-fade-x))
-    );
-  mask-composite: add;
+  mask-image: var(--xray-rim);
+  mask-size: var(--xray-width) var(--xray-height);
+  mask-position: 0 var(--xray-rim-top);
+  mask-repeat: no-repeat;
 }
 
 /* The surface's background (behind the header and the hero): black frosted glass, a blurred, dimmed

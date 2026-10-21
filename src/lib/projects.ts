@@ -4,7 +4,7 @@ export type Project = {
   description: string;
 };
 
-/** Live projects, on jakoblui.com or elsewhere (the site switcher covers the jakoblui.com sites). Supporting pages (Storybook, api docs) belong to the x-ray nodes, not here. */
+/** Work I've done: sites, downloads, anything with a link. Supporting pages (Storybook, api docs) belong to the x-ray nodes, not here. */
 export const projects: Project[] = [
   {
     name: "CV assembler",
