@@ -1,4 +1,4 @@
-import { ArrowRightIcon, FileTextIcon, MapPinIcon } from "lucide-react";
+import { ArrowRightIcon, MapPinIcon } from "lucide-react";
 import { type Ref } from "react";
 
 import { buttonVariants } from "@/components/ui/button";
@@ -15,6 +15,23 @@ type HeroProps = {
   buttonRef?: Ref<HTMLButtonElement>;
   inert?: boolean;
 };
+
+/** Lucide's arrow-right with a longer tail, so it holds its own next to bold text. */
+const TailArrow = ({ className }: { className?: string }) => (
+  <svg
+    aria-hidden
+    viewBox="0 0 28 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2.5}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M5 12h18" />
+    <path d="m16 5 7 7-7 7" />
+  </svg>
+);
 
 export const Hero = ({
   onLookInside,
@@ -71,13 +88,15 @@ export const Hero = ({
               <a
                 href={cvUrl}
                 aria-describedby="cv-caption"
+                // No border, so the fill lines up with the text above it; hover lightens it (the
+                // default, a see-through fill, goes muddy over the dark page).
                 className={cn(
                   buttonVariants({ size: "lg" }),
-                  "h-12 gap-2 px-5 text-base",
+                  "h-14 gap-2.5 rounded-[10px] border-0 bg-clip-border px-7 text-lg font-bold hover:bg-primary-300",
                 )}
               >
-                <FileTextIcon className="size-5" aria-hidden />
                 Tailor my CV
+                <TailArrow className="size-4.5 w-5.25" />
               </a>
               <p
                 id="cv-caption"
