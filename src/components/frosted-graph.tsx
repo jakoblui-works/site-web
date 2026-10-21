@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 
 import { graphs, type GraphId } from "@/lib/graphs";
+import { svgToImageUrl } from "@/lib/svg-image";
 
 import { InfraGraph } from "./infra-graph";
 import { ViewSwitch } from "./view-switch";
@@ -10,43 +11,6 @@ const SCALE = 1 / 4;
 /** The frost's blur on screen (px) and how much it boosts colour, baked into the canvas. */
 const BLUR = 18;
 const SATURATE = 1.3;
-
-/** What an SVG drawn as an image keeps of each element's styling (it can't see the page's CSS). */
-const PAINT = [
-  "fill",
-  "fill-opacity",
-  "stroke",
-  "stroke-opacity",
-  "stroke-width",
-  "stroke-dasharray",
-  "stroke-linejoin",
-  "stroke-linecap",
-  "opacity",
-  "font-family",
-  "font-size",
-  "font-weight",
-] as const;
-
-/** A standalone copy of a rendered SVG, its computed styles written inline, as a data URL. */
-const toImageUrl = (svg: SVGSVGElement) => {
-  const copy = svg.cloneNode(true) as SVGSVGElement;
-  const from = [svg, ...svg.querySelectorAll("*")];
-  const to = [copy, ...copy.querySelectorAll("*")];
-  from.forEach((element, i) => {
-    const style = getComputedStyle(element);
-    const target = to[i] as SVGElement;
-    target.removeAttribute("class");
-    target.setAttribute(
-      "style",
-      PAINT.map((property) => `${property}:${style.getPropertyValue(property)}`).join(";"),
-    );
-  });
-  const { width, height } = svg.getBoundingClientRect();
-  copy.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-  copy.setAttribute("width", String(width));
-  copy.setAttribute("height", String(height));
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(copy.outerHTML)}`;
-};
 
 /** Paints an element's box (background, border, rounded corners) at its place on screen. */
 const paintBox = (context: CanvasRenderingContext2D, element: Element) => {
@@ -130,7 +94,7 @@ export const FrostedGraph = ({ graphId }: { graphId: GraphId }) => {
         const viewSwitch = layout.querySelector("[data-view-switch]");
         if (viewSwitch) paintSwitch(context, viewSwitch);
       };
-      image.src = toImageUrl(svg);
+      image.src = svgToImageUrl(svg, box);
     };
 
     draw();

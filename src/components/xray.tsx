@@ -7,6 +7,12 @@ import {
 } from "react";
 
 import { Button } from "@/components/ui/button";
+import {
+  SNAPSHOTS,
+  SnapshotLayer,
+  useZoomSnapshots,
+  type Snapshot,
+} from "@/hooks/use-zoom-snapshots";
 import { graphs, type GraphId } from "@/lib/graphs";
 import { NARROW_CROP, traceArea } from "@/lib/trace-groups";
 import { cn } from "@/lib/utils";
@@ -55,6 +61,9 @@ const SETTLE_MS = 400;
 
 /** How far the camera is into a node: 0 the overview, 1 inside it. */
 type View = { plan: ZoomPlan; t: number };
+
+/** A snapshot in the scene this frame (see `layersAt`). */
+type SceneLayer = { kind: string; snapshot: Snapshot; opacity: number };
 
 const Kbd = ({ children }: { children: string }) => (
   <kbd className="rounded border border-white/15 bg-white/5 px-1.5 py-0.5 text-neutral-200">
@@ -149,15 +158,21 @@ export const Xray = ({
   // The same, for the loop and the effects (which outlive a render).
   const current = useRef<View | null>(null);
   const frame = useRef(0);
+  const snapshots = useZoomSnapshots(
+    graphId,
+    graph,
+    window.innerWidth >= WIDE ? landscape : portrait,
+    stageRef,
+  );
 
   /**
    * Plans zooming into `id` (a node, or a group of traces) from the camera `from`, measuring its
-   * content (the node's internals, or the group's notes) at its width.
+   * `content` (the node's internals, or the group's notes) at its width. A group's plan doesn't
+   * depend on it.
    */
-  const plan = (id: string, from: Camera) => {
+  const plan = (id: string, from: Camera, content = contentRef.current) => {
     const stageElement = stageRef.current;
-    const content = contentRef.current;
-    if (!stageElement || !content) return null;
+    if (!stageElement) return null;
     const layout = window.innerWidth >= WIDE ? landscape : portrait;
     // The stage is the window's clear area; offsets ignore the camera's own transform.
     const stage = {
@@ -166,12 +181,13 @@ export const Xray = ({
       width: stageElement.offsetWidth,
       height: stageElement.offsetHeight,
     };
-    content.style.minHeight = "";
+    if (content) content.style.minHeight = "";
     const group = graph.traceGroups.find((candidate) => candidate.id === id);
     if (group) {
       const crop = window.innerWidth >= WIDE ? 1 : NARROW_CROP;
       return planFrameZoom(layout, id, traceArea(graph, layout, group), stage, from, crop);
     }
+    if (!content) return null;
     content.style.width = `${contentWidth(stage)}px`;
     return planZoom(layout, id, stage, content.offsetHeight, from);
   };
@@ -218,6 +234,10 @@ export const Xray = ({
     // From the overview, or (following a link) from another open node's camera.
     const zoom = plan(selected, open ? zoomFrame(open.plan, ease(open.t)).camera : IDENTITY);
     if (zoom) {
+      // Usually ready from hovering it; if not, they're made now, while the zoom gets going.
+      snapshots.prepare({ kind: "start", id: selected });
+      snapshots.prepare({ kind: "target", id: selected });
+      snapshots.prepare({ kind: "final", id: selected, camera: zoom.to });
       run(zoom, 0, 1, () => interiorRef.current?.focus({ preventScroll: true }));
     }
   }, [selected]);
@@ -343,6 +363,53 @@ export const Xray = ({
 
   useEffect(() => () => cancelAnimationFrame(frame.current), []);
 
+  // At rest inside (e.g. opened on a `?xray=<id>` link), the snapshots for the way back out.
+  const restingIn = view?.t === 1 ? view.plan : null;
+  useEffect(() => {
+    if (!SNAPSHOTS || !open || !restingIn) return;
+    const timer = setTimeout(() => {
+      snapshots.prepare({ kind: "start", id: restingIn.id });
+      snapshots.prepare({ kind: "target", id: restingIn.id });
+      snapshots.prepare({ kind: "final", id: restingIn.id, camera: restingIn.to });
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [open, restingIn]);
+
+  // Hovering (or focusing) a node or a group of traces makes the snapshots for zooming into it, once
+  // the pointer has stayed on it for a moment: the target's, and the final view's, from the zoom
+  // planned as it would be from here (a node's measured with a hidden copy of its internals).
+  const [measuring, setMeasuring] = useState<string | null>(null);
+  const measureRef = useRef<HTMLElement>(null);
+  const measureContentRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!measuring) return;
+    const zoom = plan(measuring, IDENTITY, measureContentRef.current);
+    if (zoom) snapshots.prepare({ kind: "final", id: measuring, camera: zoom.to });
+  }, [measuring]);
+  const lingering = useRef<{ id: string | null; timer?: ReturnType<typeof setTimeout> }>({ id: null });
+  const prepareFor = (element: EventTarget | null) => {
+    if (!SNAPSHOTS) return;
+    const target = element instanceof Element ? element : null;
+    const id =
+      target?.closest("[data-node]")?.getAttribute("data-node") ??
+      target?.closest("[data-group]")?.getAttribute("data-group") ??
+      stageRef.current?.querySelector("[data-hovered]")?.getAttribute("data-group") ??
+      null;
+    if (id === lingering.current.id) return;
+    clearTimeout(lingering.current.timer);
+    lingering.current = {
+      id,
+      timer: id
+        ? setTimeout(() => {
+            snapshots.prepare({ kind: "start", id });
+            snapshots.prepare({ kind: "target", id });
+            setMeasuring(id);
+          }, 120)
+        : undefined,
+    };
+  };
+  useEffect(() => () => clearTimeout(lingering.current.timer), []);
+
   // What's zoomed into (or out of): a node, or a group of traces; and this frame of it.
   const shown = selected ?? view?.plan.id ?? null;
   const shownGroup = graph.traceGroups.some((group) => group.id === shown);
@@ -379,6 +446,51 @@ export const Xray = ({
     scrollable: view?.t === 1,
   };
 
+  // Which target's snapshots the live graph is hidden behind (see below).
+  const [liveHidden, setLiveHidden] = useState<string | null>(null);
+  // While the camera moves (Firefox, once the snapshots are ready), it carries snapshots of `id`
+  // instead of the live graph: how the zoom starts, with the target's (the rest dimmed, the header
+  // gone) fading in over it as the header would fade, then the final view's, sharp, towards the end.
+  // Back at the overview, how it started. Each covers the ones under it, so only those still showing
+  // through are drawn.
+  const layersAt = (id: string | null, at: View | null): SceneLayer[] | null => {
+    const start = id && snapshots.get({ kind: "start", id });
+    const target = id && snapshots.get({ kind: "target", id });
+    if (!id || !start || !target) return null;
+    if (!at) return [{ kind: "start", snapshot: start, opacity: 1 }];
+    const final = snapshots.get({ kind: "final", id, camera: at.plan.to });
+    const layers: SceneLayer[] = [
+      { kind: "start", snapshot: start, opacity: 1 },
+      { kind: "target", snapshot: target, opacity: ramp(at.t, 0.15, 0.5) },
+    ];
+    if (final) layers.push({ kind: "final", snapshot: final, opacity: ramp(at.t, 0.55, 0.85) });
+    const covering = Math.max(...layers.map((layer, i) => (layer.opacity === 1 ? i : 0)));
+    return layers.slice(covering).filter((layer) => layer.opacity > 0);
+  };
+  // Inside, it keeps them once the camera has come to rest (nothing in the graph is interactive
+  // there), as long as the final view's is there to rest on: only the overview needs the live graph.
+  // A zoom that started on the live graph (e.g. opened on a `?xray=<id>` link) stays on it at rest.
+  const restsOnSnapshots = (at: View) =>
+    at.t < 1 ||
+    (liveHidden === at.plan.id &&
+      snapshots.get({ kind: "final", id: at.plan.id, camera: at.plan.to }) !== undefined);
+  const carriedId =
+    view && view.t > 0 && restsOnSnapshots(view) && layersAt(view.plan.id, view)
+      ? view.plan.id
+      : null;
+  // The live graph stays hidden one frame longer than the snapshots are needed, so it takes on its
+  // resting state (selected, dimmed, or not) without a transition before it shows again.
+  useLayoutEffect(() => {
+    if (carriedId) {
+      setLiveHidden(carriedId);
+      return;
+    }
+    if (!liveHidden) return;
+    const next = requestAnimationFrame(() => setLiveHidden(null));
+    return () => cancelAnimationFrame(next);
+  }, [carriedId, liveHidden]);
+  const layers = layersAt(carriedId ?? liveHidden, view);
+
   // While zoomed in, clicking anywhere around (other nodes and traces too) zooms back out.
   const onStageClick = () => {
     if (shown) onSelect(null);
@@ -402,6 +514,8 @@ export const Xray = ({
           <div
             ref={stageRef}
             onClick={onStageClick}
+            onPointerMove={(event) => !shown && prepareFor(event.target)}
+            onFocus={(event) => !shown && prepareFor(event.target)}
             style={{
               transform: `translate(${camera.x}px, ${camera.y}px) scale(${camera.scale})`,
             }}
@@ -412,6 +526,7 @@ export const Xray = ({
               className={cn(
                 "size-full",
                 leaving && "animate-in fade-in duration-500 ease-in-out",
+                liveHidden && "invisible [&_*]:transition-none",
               )}
             >
               <InfraGraph
@@ -449,6 +564,10 @@ export const Xray = ({
                 />
               </div>
             )}
+            {layers?.map(({ kind, snapshot, opacity }) => (
+              <SnapshotLayer key={kind} snapshot={snapshot} opacity={opacity} />
+            ))}
+            {snapshots.hidden}
           </div>
           {/* Only in the overview: inside a node or a group, the way out comes first. */}
           <ViewSwitch
@@ -480,6 +599,23 @@ export const Xray = ({
               nodeId={shown}
             />
           ))}
+        {/* In the overview: the internals of the node being hovered, hidden, measured to plan its
+            zoom ahead (see `measuring`). */}
+        {!shown && measuring && graph.details[measuring] && (
+          <NodeInterior
+            key={`measure-${measuring}`}
+            ref={measureRef}
+            contentRef={measureContentRef}
+            rect={null}
+            width={0}
+            height={0}
+            scale={1}
+            opacity={0}
+            scrollable={false}
+            graph={graph}
+            nodeId={measuring}
+          />
+        )}
       </section>
       {open && (
         <>
