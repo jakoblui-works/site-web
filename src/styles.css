@@ -254,7 +254,7 @@
 }
 .xray-frost-content {
   /* Fitted like `.xray-content`, so the copy lines up with the interior's graph. */
-  padding: var(--xray-clear-y, 15vh) var(--xray-clear-x, 15vw);
+  padding: var(--xray-clear-y, 15vh) var(--xray-clear-x, 15vw) var(--xray-clear-bottom, 15vh);
 }
 
 /* The view switch (`ViewSwitch`) sits just above the clear area, below the header where the clear
@@ -307,7 +307,7 @@
   position: relative;
   /* Fitted inside the window's clear area (where the fade has ended), so the graph is always fully
      visible; set by `useXrayWindow`. */
-  padding: var(--xray-clear-y, 15vh) var(--xray-clear-x, 15vw);
+  padding: var(--xray-clear-y, 15vh) var(--xray-clear-x, 15vw) var(--xray-clear-bottom, 15vh);
 }
 .xray-content::after {
   content: "";

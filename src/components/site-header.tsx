@@ -11,7 +11,11 @@ export const SiteHeader = () => {
   return (
     <header className="h-header pt-3">
       <div className="mx-auto flex h-full w-full max-w-6xl items-center justify-between px-4 rounded-xl ">
-        <div className="flex items-center gap-1.75 font-logo text-2xl leading-none font-semibold tracking-[-0.03em]">
+        {/* The logo and the work menu stand on solid frost over the open x-ray (`data-xray-solid`). */}
+        <div
+          data-xray-solid
+          className="flex items-center gap-1.75 font-logo text-2xl leading-none font-semibold tracking-[-0.03em]"
+        >
           <SiteSwitcher sites={sites} current={hub} />
           <Link
             to="/"
