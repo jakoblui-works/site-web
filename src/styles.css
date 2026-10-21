@@ -371,14 +371,23 @@
   pointer-events: none;
 }
 
-/* Distance: the interior is dimmed and desaturated, so it recedes rather than glowing in front of
-   the surface. */
+/* Distance: the interior is dimmed, so it recedes rather than glowing in front of the surface. A
+   dark layer over it rather than a filter: Firefox redraws a filtered layer on every frame of a zoom,
+   which halved its frame rate. */
 .xray-content {
+  position: relative;
   /* Fitted inside the window's clear area (where the fade has ended), so the graph is always fully
      visible; set by `useXrayWindow`. */
   padding: var(--xray-clear-y, 15vh) var(--xray-clear-x, 15vw);
-  filter: brightness(0.9) saturate(0.85);
   transition: opacity 300ms ease;
+}
+.xray-content::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+  background-color: rgb(0 0 0 / 0.1);
 }
 
 /* Phones: the clear area starts behind the switch, so the graph is fitted below it (the interior
@@ -412,7 +421,7 @@
 }
 .xray-interior:not([data-open]) .xray-content {
   opacity: 0.55;
-  filter: brightness(0.9) saturate(0.85) blur(4px);
+  filter: blur(4px);
   transition:
     opacity 300ms ease,
     filter 500ms ease;
@@ -421,7 +430,7 @@
   .xray-interior:not([data-open])
   .xray-content {
   opacity: 0.9;
-  filter: brightness(0.9) saturate(0.85) blur(0);
+  filter: blur(0);
 }
 
 @media (prefers-reduced-motion: reduce) {

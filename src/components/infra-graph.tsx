@@ -17,7 +17,7 @@ import { InfraLogo } from "./infra-logos";
 
 /** Gap between a trace's arrowhead and the node it points at. */
 const EDGE_GAP = 6;
-/** How wide a trace's invisible hit area is (viewBox units at the overview's zoom), so it's easy to click. */
+/** How wide a trace's invisible hit area is (viewBox units), so it's easy to click. */
 const HIT_WIDTH = 14;
 /** How near a trace (viewBox units) the pointer picks its group. */
 const NEAR_TRACE = 30;
@@ -41,6 +41,25 @@ const withGap = (route: Point[], gap: number): Point[] => {
 };
 
 const toPoints = (route: Point[]) => route.map(({ x, y }) => `${x},${y}`).join(" ");
+
+/** The arrowhead at a trace's end: how far back its base is from the tip, and its half-width. */
+const ARROW_LENGTH = 9.5;
+const ARROW_HALF_WIDTH = 4.2;
+
+/** An arrowhead with its tip at the route's end, pointing along its last segment. */
+const arrowhead = (route: Point[]) => {
+  const tip = route[route.length - 1];
+  const before = route[route.length - 2];
+  const length = Math.hypot(tip.x - before.x, tip.y - before.y);
+  const dx = (tip.x - before.x) / length;
+  const dy = (tip.y - before.y) / length;
+  const base = { x: tip.x - dx * ARROW_LENGTH, y: tip.y - dy * ARROW_LENGTH };
+  return toPoints([
+    tip,
+    { x: base.x - dy * ARROW_HALF_WIDTH, y: base.y + dx * ARROW_HALF_WIDTH },
+    { x: base.x + dy * ARROW_HALF_WIDTH, y: base.y - dx * ARROW_HALF_WIDTH },
+  ]);
+};
 
 /** How far the dot grid reaches past the layout on every side (a multiple of `GRID`), so it fills the screen. */
 const GRID_REACH = 4000;
@@ -93,7 +112,6 @@ export const InfraGraph = ({
   className,
 }: InfraGraphProps) => {
   const id = useId();
-  const arrowId = `${id}-arrow`;
   const textureId = `${id}-texture`;
   const gridId = `${id}-grid`;
   // The group of the trace the pointer is near (see below).
@@ -146,17 +164,6 @@ export const InfraGraph = ({
       className={cn("h-auto w-full", grid && "overflow-visible", className)}
     >
       <defs>
-        <marker
-          id={arrowId}
-          viewBox="0 0 10 10"
-          refX="9"
-          refY="5"
-          markerWidth="7"
-          markerHeight="7"
-          orient="auto-start-reverse"
-        >
-          <path d="M 0 1 L 9 5 L 0 9 z" className="fill-violet-300/80" />
-        </marker>
         {/* Faint board texture: fine 45° lines, like the copper pour on a circuit board. */}
         <pattern
           id={textureId}
@@ -196,7 +203,7 @@ export const InfraGraph = ({
         <rect
           {...casing}
           rx={20}
-          className="fill-[oklch(0.21_0.065_292)] stroke-violet-300/35 [stroke-dasharray:6_6] [stroke-width:calc(1px/var(--zoom,1))]"
+          className="fill-[oklch(0.21_0.065_292)] stroke-violet-300/35 [stroke-dasharray:6_6] [stroke-width:1]"
         />
         <rect {...casing} rx={20} fill={`url(#${textureId})`} />
         {[
@@ -260,6 +267,7 @@ export const InfraGraph = ({
               .map((edge) => {
                 const route = edgeRoute(layout, edge);
                 const [start] = route;
+                const end = withGap(route, EDGE_GAP);
                 const lit = isLit.edge(edge);
                 return (
                   <g
@@ -271,32 +279,41 @@ export const InfraGraph = ({
                       !lit && (group ? "opacity-10" : "opacity-20"),
                     )}
                   >
-                    <polyline
-                      points={toPoints(withGap(route, EDGE_GAP))}
-                      fill="none"
-                      markerEnd={`url(#${arrowId})`}
+                    {/* The trace, its arrowhead and its via in one solid colour, faded together, so
+                        they read as one piece instead of overlapping see-through parts. */}
+                    <g
                       className={cn(
-                        "stroke-violet-300/50 transition-[stroke] duration-200 [stroke-width:1.5] [stroke-linejoin:round]",
-                        edge.dashed && "[stroke-dasharray:5_5]",
-                        (selected || group) && lit && "stroke-violet-200",
+                        "text-violet-300 opacity-50 transition-[color,opacity] duration-200",
+                        (selected || group) && lit && "text-violet-200 opacity-100",
                         onSelect &&
-                          "group-hover/trace:stroke-violet-200 group-focus-visible/trace:stroke-violet-100 group-data-hovered/trace:stroke-violet-200",
+                          "group-hover/trace:text-violet-200 group-hover/trace:opacity-100 group-focus-visible/trace:text-violet-100 group-focus-visible/trace:opacity-100 group-data-hovered/trace:text-violet-200 group-data-hovered/trace:opacity-100",
                       )}
-                    />
-                    {/* Via: the pad where the trace leaves the component. */}
-                    <circle
-                      cx={start.x}
-                      cy={start.y}
-                      r={3}
-                      className="fill-[oklch(0.13_0.045_292)] stroke-violet-300/70 [stroke-width:1.5]"
-                    />
+                    >
+                      <polyline
+                        // Stops inside the arrowhead, which covers its end.
+                        points={toPoints(withGap(end, ARROW_LENGTH - 1))}
+                        fill="none"
+                        className={cn(
+                          "stroke-current [stroke-width:1.5] [stroke-linejoin:round]",
+                          edge.dashed && "[stroke-dasharray:5_5]",
+                        )}
+                      />
+                      <polygon points={arrowhead(end)} className="fill-current" />
+                      {/* Via: the pad where the trace leaves the component. */}
+                      <circle
+                        cx={start.x}
+                        cy={start.y}
+                        r={3}
+                        className="fill-[oklch(0.13_0.045_292)] stroke-current [stroke-width:1.5]"
+                      />
+                    </g>
                     {/* Invisible and wider than the trace, so it's easy to click. */}
                     {onSelect && (
                       <polyline
                         points={toPoints(route)}
                         fill="none"
                         className="stroke-transparent"
-                        style={{ strokeWidth: `calc(${HIT_WIDTH}px / var(--zoom, 1))` }}
+                        strokeWidth={HIT_WIDTH}
                       />
                     )}
                   </g>
@@ -342,11 +359,11 @@ export const InfraGraph = ({
                 height={size.height}
                 rx={10}
                 className={cn(
-                  "transition-[stroke] duration-200 [stroke-width:calc(1.5px/var(--zoom,1))]",
+                  "transition-[stroke] duration-200 [stroke-width:1.5]",
                   nodeStyles[node.kind],
                   onSelect && "group-hover:stroke-violet-200",
                   selected === node.id &&
-                    "stroke-violet-200 [stroke-width:calc(2px/var(--zoom,1))]",
+                    "stroke-violet-200 [stroke-width:2]",
                 )}
               />
               {/* The header fades out as the camera zooms past it, into the node. */}

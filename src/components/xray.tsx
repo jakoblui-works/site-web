@@ -47,6 +47,11 @@ const SCROLL_PX = 600;
 const TRACKPAD_PINCH_PX = 200;
 const TOUCH_PINCH_GAIN = 0.6;
 const LEAVE_BELOW = 0.75;
+/**
+ * How long scrolling has to pause (ms) before a zoom-out that didn't get that far settles back in:
+ * longer than the gap between a mouse wheel's notches, so slow scrolling doesn't pull back in between.
+ */
+const SETTLE_MS = 400;
 
 /** How far the camera is into a node: 0 the overview, 1 inside it. */
 type View = { plan: ZoomPlan; t: number };
@@ -294,7 +299,7 @@ export const Xray = ({
       const delta = event.deltaMode === WheelEvent.DOM_DELTA_LINE ? event.deltaY * 16 : event.deltaY;
       scrubTo(ease(open.t) - delta / (trackpadPinch ? TRACKPAD_PINCH_PX : SCROLL_PX));
       clearTimeout(settle);
-      settle = setTimeout(settleBack, 180);
+      settle = setTimeout(settleBack, SETTLE_MS);
     };
 
     const fingers = (touches: TouchList) =>
@@ -399,8 +404,6 @@ export const Xray = ({
             onClick={onStageClick}
             style={{
               transform: `translate(${camera.x}px, ${camera.y}px) scale(${camera.scale})`,
-              // The casing and node outlines stay thin however far in the camera is (the traces scale).
-              ["--zoom" as string]: camera.scale,
             }}
             className="xray-camera relative size-full"
           >
