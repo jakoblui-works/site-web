@@ -8,6 +8,7 @@ import {
   easeInverse,
   IDENTITY,
   labelRect,
+  NODE_BORDER,
   planFrameZoom,
   planZoom,
   ramp,
@@ -62,9 +63,31 @@ describe.each(Object.entries(graphs))("%s graph", (_, graph) => {
         expect(rect.y + rect.height / 2).toBeCloseTo(stage.y + stage.height / 2);
         expect(rect.width).toBeGreaterThanOrEqual(stage.width - EPS);
         expect(rect.height).toBeLessThanOrEqual(stage.height + EPS);
-        // The internals fill it top to bottom (or scroll), on stage.
+        // The internals fill it top to bottom inside its border (or scroll there), on stage.
+        const border = NODE_BORDER * (rect.height / layout.node.height);
+        const insideBorder = {
+          x: rect.x + border,
+          y: rect.y + border,
+          width: rect.width - 2 * border,
+          height: rect.height - 2 * border,
+        };
         expect(inside(content, stage), node.id).toBe(true);
-        expect(content.height).toBeCloseTo(rect.height);
+        expect(inside(content, insideBorder), node.id).toBe(true);
+        expect(content.height).toBeCloseTo(insideBorder.height);
+      }
+    });
+
+    it("leaves room inside the border for internals that fit, so they don't scroll", () => {
+      for (const node of nodes) {
+        const plan = planZoom(layout, node.id, stage, 240);
+        expect(plan.content.height + EPS).toBeGreaterThanOrEqual(240 * plan.contentZoom);
+        expect(plan.overflows, node.id).toBe(false);
+      }
+    });
+
+    it("scrolls internals taller than the stage", () => {
+      for (const node of nodes) {
+        expect(planZoom(layout, node.id, stage, 4000).overflows, node.id).toBe(true);
       }
     });
 

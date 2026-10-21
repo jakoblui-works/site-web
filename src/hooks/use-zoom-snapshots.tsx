@@ -3,6 +3,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "re
 import { InfraGraph } from "@/components/infra-graph";
 import type { GraphId } from "@/lib/graphs";
 import type { Graph, GraphLayout, Rect } from "@/lib/infra-graph";
+import { measureStage } from "@/lib/stage";
 import { averageBackground, rasterize } from "@/lib/svg-image";
 import { fitScale, type Camera } from "@/lib/zoom";
 
@@ -52,7 +53,8 @@ export const useZoomSnapshots = (
   const base = () => {
     const stage = stageRef.current;
     if (!stage) return null;
-    return `${graphId}|${layout.width}x${layout.height}|${stage.offsetLeft},${stage.offsetTop},${stage.offsetWidth}x${stage.offsetHeight}|${innerWidth}x${innerHeight}@${devicePixelRatio}`;
+    const { x, y, width, height } = measureStage(stage);
+    return `${graphId}|${layout.width}x${layout.height}|${x},${y},${width}x${height}|${innerWidth}x${innerHeight}@${devicePixelRatio}`;
   };
   const keyOf = (shot: Shot) => {
     const prefix = base();
@@ -103,9 +105,10 @@ export const useZoomSnapshots = (
     // What it covers, in stage px: the whole screen before zooming, or once zoomed in.
     const camera = active.shot.kind === "final" ? active.shot.camera : null;
     const scale = camera?.scale ?? 1;
+    const box = measureStage(stage);
     const rect = {
-      x: (-stage.offsetLeft - (camera?.x ?? 0)) / scale,
-      y: (-stage.offsetTop - (camera?.y ?? 0)) / scale,
+      x: (-box.x - (camera?.x ?? 0)) / scale,
+      y: (-box.y - (camera?.y ?? 0)) / scale,
       width: innerWidth / scale,
       height: innerHeight / scale,
     };
@@ -118,10 +121,10 @@ export const useZoomSnapshots = (
       height: Math.ceil(innerHeight * density),
     };
     // The same region in the graph's viewBox units (fitted `xMidYMid meet` in the stage).
-    const fit = fitScale(layout, { width: stage.offsetWidth, height: stage.offsetHeight });
+    const fit = fitScale(layout, box);
     const offset = {
-      x: (stage.offsetWidth - layout.width * fit) / 2,
-      y: (stage.offsetHeight - layout.height * fit) / 2,
+      x: (box.width - layout.width * fit) / 2,
+      y: (box.height - layout.height * fit) / 2,
     };
     const viewBox = {
       x: (rect.x - offset.x) / fit,

@@ -12,7 +12,7 @@ export type ZoomFrameProps = {
   /** How large it's drawn now, relative to its layout. */
   scale: number;
   opacity: number;
-  /** Scrolls only once zoomed in. */
+  /** Scrolls (once zoomed in, if it doesn't fit). */
   scrollable: boolean;
   ref?: Ref<HTMLElement>;
   contentRef?: Ref<HTMLDivElement>;

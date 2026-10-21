@@ -19,6 +19,11 @@ const MAX_CONTENT_WIDTH = 820;
 const CONTENT_SHARE = 0.75;
 /** How much of the stage's height they may take when scaled up. */
 const MAX_CONTENT_HEIGHT_SHARE = 0.9;
+/**
+ * How far inside a node's edge its border ends (units): half the selected node's stroke (2, see
+ * `InfraGraph`), which is centred on the edge. The internals stay inside it, scrolling too.
+ */
+export const NODE_BORDER = 1;
 
 /** How large one viewBox unit is with the whole graph fitted (`preserveAspectRatio="xMidYMid meet"`). */
 export const fitScale = (layout: GraphLayout, stage: Size) =>
@@ -61,6 +66,11 @@ export type ZoomPlan = {
    * scale up with the node, so they take the same share of it as on a laptop.
    */
   contentZoom: number;
+  /**
+   * Whether the content is taller than its place once inside (more than a px: the browser's own
+   * rounding mustn't decide), so it scrolls there.
+   */
+  overflows: boolean;
 };
 
 /** The camera at `scale` that puts the stage point `centre` (before zooming) at `at`. */
@@ -94,12 +104,17 @@ export const planZoom = (
       (MAX_CONTENT_HEIGHT_SHARE * stage.height) / contentHeight,
     ),
   );
+  // Tall enough for the internals inside its border, up to the stage's height.
   const pxPerUnit = Math.max(
     stage.width / node.width,
-    Math.min(contentHeight * contentZoom, stage.height) / node.height,
+    Math.min(
+      (contentHeight * contentZoom) / (node.height - 2 * NODE_BORDER),
+      stage.height / node.height,
+    ),
   );
   const scale = pxPerUnit / fit;
   const height = node.height * pxPerUnit;
+  const border = NODE_BORDER * pxPerUnit;
   const width = layoutWidth * contentZoom;
   return {
     id,
@@ -117,11 +132,12 @@ export const planZoom = (
     ),
     content: {
       x: stage.x + (stage.width - width) / 2,
-      y: stage.y + (stage.height - height) / 2,
+      y: stage.y + (stage.height - height) / 2 + border,
       width,
-      height,
+      height: height - 2 * border,
     },
     contentZoom,
+    overflows: contentHeight * contentZoom > height - 2 * border + 1,
   };
 };
 
@@ -182,6 +198,7 @@ export const planFrameZoom = (
     // The labels are placed on the scene itself (hand-placed per layout), not in a block of content.
     content: stage,
     contentZoom: 1,
+    overflows: false,
   };
 };
 

@@ -17,6 +17,7 @@ import {
 } from "@/hooks/use-zoom-snapshots";
 import { graphs, type GraphId } from "@/lib/graphs";
 import { isZoomTarget } from "@/lib/infra-graph";
+import { measureStage } from "@/lib/stage";
 import {
   enterableFrom,
   NARROW_CROP,
@@ -209,13 +210,8 @@ export const Xray = ({
     const stageElement = stageRef.current;
     if (!stageElement) return null;
     const layout = window.innerWidth >= WIDE ? landscape : portrait;
-    // The stage is the window's clear area; offsets ignore the camera's own transform.
-    const stage = {
-      x: stageElement.offsetLeft,
-      y: stageElement.offsetTop,
-      width: stageElement.offsetWidth,
-      height: stageElement.offsetHeight,
-    };
+    // The stage is the window's clear area.
+    const stage = measureStage(stageElement);
     if (content) content.style.minHeight = "";
     const group = graph.traceGroups.find((candidate) => candidate.id === id);
     if (group) {
@@ -223,8 +219,13 @@ export const Xray = ({
       return planFrameZoom(layout, id, traceArea(graph, layout, group), stage, from, crop);
     }
     if (!content) return null;
-    content.style.width = `${contentWidth(stage)}px`;
-    return planZoom(layout, id, stage, content.offsetHeight, from);
+    const width = contentWidth(stage);
+    content.style.width = `${width}px`;
+    // Its layout height unrounded (`offsetHeight` rounds, and a fraction of a px over makes it
+    // scroll), from its drawn size (it may be scaled), up to the next whole px.
+    const box = content.getBoundingClientRect();
+    const height = box.width ? Math.ceil(box.height * (width / box.width)) : content.offsetHeight;
+    return planZoom(layout, id, stage, height, from);
   };
 
   /** Runs `zoom`'s `t` from `from` to `to`, a frame at a time. */
@@ -675,7 +676,8 @@ export const Xray = ({
     scale: zoom?.contentScale ?? 1,
     // It comes into focus as the camera reaches it.
     opacity: view ? ramp(view.t, 0.45, 0.85) : 0,
-    scrollable: view?.t === 1,
+    // Only once inside, and only if the internals don't fit.
+    scrollable: view?.t === 1 && view.plan.overflows,
   };
 
   // Which zoom's snapshots the live graph is hidden behind (see below): its target's id, after the
