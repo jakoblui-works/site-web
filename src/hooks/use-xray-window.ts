@@ -1,22 +1,14 @@
-import { useLayoutEffect, useRef, type RefObject } from "react";
+import { useLayoutEffect, type RefObject } from "react";
 
-type Side = "top" | "right" | "bottom" | "left";
-type Hole = Record<Side | "fade", number>;
-type Window = Record<Side | "fade-x" | "fade-y", number>;
-
-/** Matches the strength transition in `styles.css`. */
-const ANIMATION_MS = 800;
-/** The hole under the panel only softens at its very edge (the panel covers it). */
-const HOLE_FADE = 12;
 /** Wide screens show the look-inside panel; phones a button instead (Tailwind's `lg`). */
 const WIDE = 1024;
 
 /**
- * The window's shape, in viewport px: the clear area (where the surface is fully gone, measured from
- * the screen's edges; the graph is fitted inside it) and how far the opacity gradient reaches
- * outwards from it, across and down (a smoothstep curve, see `styles.css`). Where the fade is longer
- * than the clear margin, the window starts past the screen edge, so the edge is already partly
- * see-through. Phones have little room across, so their side fade is shorter.
+ * The window's shape, in viewport px: the clear area (where the window is fully open, measured from
+ * the screen's edges; the graph is fitted inside it) and how far the fade reaches outwards from it,
+ * across and down (a smoothstep curve, see `styles.css`). Where the fade is longer than the clear
+ * margin, the window starts past the screen edge, so the edge is already partly open. Phones have
+ * little room across, so their side fade is shorter.
  */
 const windowShape = (vw: number, vh: number) =>
   vw >= WIDE
@@ -28,95 +20,48 @@ const windowShape = (vw: number, vh: number) =>
       }
     : { clearX: 0.08 * vw, clearY: 0.11 * vh, fadeX: 0.25 * vw, fadeY: 0.3 * vh };
 
-const isShown = (element: HTMLElement) => element.getClientRects().length > 0;
+const apply = (style: CSSStyleDeclaration, values: Record<string, number>) => {
+  for (const [key, value] of Object.entries(values)) {
+    style.setProperty(`--xray-${key}`, `${value}px`);
+  }
+};
 
 /**
- * Lays out the x-ray's masks on the surface (see `styles.css`): the hole under the look-inside panel
- * (wide screens only) and the window over the visible screen. Opening only turns the window's
- * strength up (via `data-open`); the content is masked from opening until the strength is back to 0.
- * Insets are px relative to the surface.
+ * Publishes the x-ray's window (see `styles.css`). On the root: px insets from the screen's edges
+ * and the fade across and down, for the interior's mask; and the clear area, which the graph is
+ * fitted inside (see `.xray-content`). While `settled`, the same insets relative to the surface too,
+ * for its mask (it may be scrolled; scrolling is locked while open). Follows the screen's size.
  */
-export const useXrayWindow = (
-  surfaceRef: RefObject<HTMLElement | null>,
-  panelRef: RefObject<HTMLElement | null>,
-  open: boolean,
-) => {
-  const firstRun = useRef(true);
-
+export const useXrayWindow = (surfaceRef: RefObject<HTMLElement | null>, settled: boolean) => {
   useLayoutEffect(() => {
-    const surface = surfaceRef.current;
-    const panel = panelRef.current;
-    if (!surface || !panel) return;
-
-    const apply = (name: "xray" | "hole", insets: Hole | Window) => {
-      for (const [key, value] of Object.entries(insets)) {
-        surface.style.setProperty(`--${name}-${key}`, `${value}px`);
-      }
-    };
-
-    const hole = (): Hole => {
-      const s = surface.getBoundingClientRect();
-      if (!isShown(panel)) {
-        // No hole: insets that cover the whole surface.
-        return { top: s.height, right: s.width, bottom: s.height, left: s.width, fade: 0 };
-      }
-      const p = panel.getBoundingClientRect();
-      return {
-        top: p.top - s.top,
-        right: s.right - p.right,
-        bottom: s.bottom - p.bottom,
-        left: p.left - s.left,
-        fade: HOLE_FADE,
-      };
-    };
-
-    // Over the visible part of the surface (scrolling is locked while open). Also publishes the
-    // clear area for the interior, which fits the graph inside it (see `.xray-content`).
-    const window_ = (): Window => {
-      const s = surface.getBoundingClientRect();
-      const vw = window.innerWidth;
+    const place = () => {
       const vh = window.innerHeight;
-      const shape = windowShape(vw, vh);
-      const root = document.documentElement.style;
-      root.setProperty("--xray-clear-x", `${shape.clearX}px`);
-      root.setProperty("--xray-clear-y", `${shape.clearY}px`);
+      const shape = windowShape(window.innerWidth, vh);
       const x = shape.clearX - shape.fadeX;
       const y = shape.clearY - shape.fadeY;
-      return {
-        top: Math.max(0, -s.top) + y,
-        right: x,
-        bottom: Math.max(0, s.bottom - vh) + y,
+      const fades = { "fade-x": shape.fadeX, "fade-y": shape.fadeY };
+      apply(document.documentElement.style, {
+        "clear-x": shape.clearX,
+        "clear-y": shape.clearY,
+        top: y,
+        bottom: y,
         left: x,
-        "fade-x": shape.fadeX,
-        "fade-y": shape.fadeY,
-      };
-    };
-
-    const place = () => {
-      apply("hole", hole());
-      // The window is measured when opening starts and then stays put until it's unused again.
-      if (open || !surface.dataset.masked) apply("xray", window_());
+        right: x,
+        ...fades,
+      });
+      const surface = surfaceRef.current;
+      if (!settled || !surface) return;
+      const box = surface.getBoundingClientRect();
+      apply(surface.style, {
+        top: Math.max(0, -box.top) + y,
+        bottom: Math.max(0, box.bottom - vh) + y,
+        left: x,
+        right: x,
+        ...fades,
+      });
     };
     place();
-
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    if (open) {
-      surface.dataset.masked = "";
-    } else if (!firstRun.current) {
-      // Closing: keep the content masked until the strength is back to 0.
-      timer = setTimeout(() => delete surface.dataset.masked, ANIMATION_MS);
-    }
-    firstRun.current = false;
-
-    const observer = new ResizeObserver(place);
-    observer.observe(surface);
-    observer.observe(panel);
     window.addEventListener("resize", place);
-    void document.fonts.ready.then(place);
-    return () => {
-      clearTimeout(timer);
-      observer.disconnect();
-      window.removeEventListener("resize", place);
-    };
-  }, [surfaceRef, panelRef, open]);
+    return () => window.removeEventListener("resize", place);
+  }, [surfaceRef, settled]);
 };

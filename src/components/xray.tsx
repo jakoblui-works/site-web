@@ -85,8 +85,8 @@ type XrayProps = {
 };
 
 /**
- * The interior: fixed behind the page the whole time. The surface's mask decides how much of it
- * shows (a hole under the look-inside panel, or most of the screen when open).
+ * The interior: fixed on top of the page the whole time, seen through the window (see `styles.css`);
+ * invisible while closed, when the look-inside panel shows a picture of it instead.
  */
 export const Xray = ({
   open,
@@ -505,7 +505,7 @@ export const Xray = ({
         inert={!open}
         data-open={open || undefined}
         className={cn(
-          "xray-interior fixed inset-0 z-0 overflow-hidden bg-[oklch(0.13_0.045_292)] outline-none",
+          "xray-interior fixed inset-0 z-20 overflow-hidden bg-[oklch(0.13_0.045_292)] outline-none",
           // Inside a node, two-finger pinches zoom out of it rather than zooming the page.
           shown && "touch-pan-y",
         )}

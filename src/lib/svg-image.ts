@@ -162,7 +162,8 @@ export const rasterize = async (
 export const averageBackground = async (element: Element) => {
   const base = getComputedStyle(element).backgroundColor;
   const texture = getComputedStyle(element, "::before");
-  const url = texture.backgroundImage.match(/url\("?([^")]+)"?\)/)?.[1];
+  // The whole `url(…)`: a data URL can have parentheses of its own.
+  const url = texture.backgroundImage.match(/^url\((["']?)(.*)\1\)$/)?.[2];
   if (!url) return base;
   const image = new Image();
   image.src = url;
