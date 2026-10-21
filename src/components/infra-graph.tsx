@@ -1,4 +1,4 @@
-import { useId, type KeyboardEvent } from "react";
+import { useId, useState, type KeyboardEvent, type MouseEvent } from "react";
 
 import {
   edgeId,
@@ -10,6 +10,7 @@ import {
   type NodeKind,
   type Point,
 } from "@/lib/infra-graph";
+import { nearestTraceGroup } from "@/lib/trace-groups";
 import { cn } from "@/lib/utils";
 
 import { InfraLogo } from "./infra-logos";
@@ -18,6 +19,8 @@ import { InfraLogo } from "./infra-logos";
 const EDGE_GAP = 6;
 /** How wide a trace's invisible hit area is (viewBox units at the overview's zoom), so it's easy to click. */
 const HIT_WIDTH = 14;
+/** How near a trace (viewBox units) the pointer picks its group. */
+const NEAR_TRACE = 30;
 /** Node padding, and the logo column on the node's left (one logo, or two stacked). */
 const PADDING = 14;
 const LOGO_SIZE = { single: 24, stacked: 18 };
@@ -93,6 +96,15 @@ export const InfraGraph = ({
   const arrowId = `${id}-arrow`;
   const textureId = `${id}-texture`;
   const gridId = `${id}-grid`;
+  // The group of the trace the pointer is near (see below).
+  const [hoveredGroup, setHoveredGroup] = useState<string | null>(null);
+  /** The group of the trace nearest the pointer, within `NEAR_TRACE`. */
+  const groupAt = (event: MouseEvent<SVGGraphicsElement>) => {
+    const toLayout = event.currentTarget.getScreenCTM()?.inverse();
+    if (!toLayout) return null;
+    const point = new DOMPoint(event.clientX, event.clientY).matrixTransform(toLayout);
+    return nearestTraceGroup(graph, layout, point, NEAR_TRACE)?.id ?? null;
+  };
   const { node: size, casing, positions } = layout;
   const group = graph.traceGroups.find((candidate) => candidate.id === selectedGroup);
   // What stays bright: everything, or the selected node and its traces, or the selected group.
@@ -210,12 +222,32 @@ export const InfraGraph = ({
         </text>
       </g>
 
+      {/* Near the traces, under them: hovering or clicking picks the group of the nearest trace.
+          Mouse only (keyboard users have the groups' buttons); a trace itself still wins. */}
+      {onSelect && (
+        <rect
+          aria-hidden
+          width={layout.width}
+          height={layout.height}
+          onPointerMove={(event) => setHoveredGroup(groupAt(event))}
+          onPointerLeave={() => setHoveredGroup(null)}
+          onClick={(event) => {
+            const picked = groupAt(event);
+            if (!picked) return;
+            setHoveredGroup(null);
+            onSelect(picked);
+          }}
+          className={cn("fill-transparent", hoveredGroup && "cursor-pointer")}
+        />
+      )}
+
       {/* The traces, one button per group: clicking any of its traces selects the group. */}
       <g>
         {graph.traceGroups.map((traceGroup) => (
           <g
             key={traceGroup.id}
             data-group={traceGroup.id}
+            data-hovered={(onSelect && hoveredGroup === traceGroup.id) || undefined}
             {...selectable(
               traceGroup.id,
               `${traceGroup.title}: ${traceGroup.path}`,
@@ -244,11 +276,11 @@ export const InfraGraph = ({
                       fill="none"
                       markerEnd={`url(#${arrowId})`}
                       className={cn(
-                        "stroke-violet-300/50 transition-[stroke] duration-200 [stroke-width:calc(1.5px/var(--zoom,1))] [stroke-linejoin:round]",
+                        "stroke-violet-300/50 transition-[stroke] duration-200 [stroke-width:1.5] [stroke-linejoin:round]",
                         edge.dashed && "[stroke-dasharray:5_5]",
                         (selected || group) && lit && "stroke-violet-200",
                         onSelect &&
-                          "group-hover/trace:stroke-violet-200 group-focus-visible/trace:stroke-violet-100",
+                          "group-hover/trace:stroke-violet-200 group-focus-visible/trace:stroke-violet-100 group-data-hovered/trace:stroke-violet-200",
                       )}
                     />
                     {/* Via: the pad where the trace leaves the component. */}
@@ -256,7 +288,7 @@ export const InfraGraph = ({
                       cx={start.x}
                       cy={start.y}
                       r={3}
-                      className="fill-[oklch(0.13_0.045_292)] stroke-violet-300/70 [stroke-width:calc(1.5px/var(--zoom,1))]"
+                      className="fill-[oklch(0.13_0.045_292)] stroke-violet-300/70 [stroke-width:1.5]"
                     />
                     {/* Invisible and wider than the trace, so it's easy to click. */}
                     {onSelect && (

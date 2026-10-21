@@ -399,7 +399,7 @@ export const Xray = ({
             onClick={onStageClick}
             style={{
               transform: `translate(${camera.x}px, ${camera.y}px) scale(${camera.scale})`,
-              // The graph keeps its lines thin however far in the camera is.
+              // The casing and node outlines stay thin however far in the camera is (the traces scale).
               ["--zoom" as string]: camera.scale,
             }}
             className="xray-camera relative size-full"

@@ -5,6 +5,7 @@ import {
   edgeRoute,
   type Graph,
   type GraphLayout,
+  type Point,
   type Rect,
   type TraceGroup,
 } from "./infra-graph";
@@ -26,6 +27,41 @@ export const LABEL_STYLE = {
 /** The group a trace (by `edgeId`) belongs to. */
 export const traceGroupOf = (graph: Graph, id: string) =>
   graph.traceGroups.find((group) => group.edges.includes(id));
+
+/** How far `point` is from the segment a→b. */
+const distanceToSegment = (point: Point, a: Point, b: Point) => {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const lengthSquared = dx * dx + dy * dy;
+  const t =
+    lengthSquared === 0
+      ? 0
+      : Math.min(1, Math.max(0, ((point.x - a.x) * dx + (point.y - a.y) * dy) / lengthSquared));
+  return Math.hypot(point.x - (a.x + t * dx), point.y - (a.y + t * dy));
+};
+
+/**
+ * The group of the trace nearest `point` in a layout (viewBox units), if that trace is no further
+ * than `within`.
+ */
+export const nearestTraceGroup = (
+  graph: Graph,
+  layout: GraphLayout,
+  point: Point,
+  within: number,
+): TraceGroup | undefined => {
+  let nearest: { id: string; distance: number } | undefined;
+  for (const edge of graph.edges) {
+    const route = edgeRoute(layout, edge);
+    for (let i = 1; i < route.length; i++) {
+      const distance = distanceToSegment(point, route[i - 1], route[i]);
+      if (distance <= within && (!nearest || distance < nearest.distance)) {
+        nearest = { id: edgeId(edge), distance };
+      }
+    }
+  }
+  return nearest && traceGroupOf(graph, nearest.id);
+};
 
 /** The area a group covers in a layout (viewBox units): its traces and the parts they connect. */
 export const traceArea = (
