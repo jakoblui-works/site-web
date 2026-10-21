@@ -8,7 +8,7 @@ import { Xray } from "./xray";
 const meta: Meta<typeof Xray> = {
   title: "Components/Xray",
   component: Xray,
-  args: { open: true, graphId: "runtime", onGraphChange: fn(), selected: null, onSelect: fn(), onClose: fn() },
+  args: { open: true, graphId: "runtime", onGraphChange: fn(), selected: null, parent: null, onSelect: fn(), onClose: fn() },
   parameters: { layout: "fullscreen" },
 };
 export default meta;
@@ -77,6 +77,57 @@ export const ZoomsOutOnScroll: Story = {
   },
 };
 
+/** The node's button in the layout shown at this width (the other one isn't displayed). */
+const shownNode = (canvasElement: HTMLElement, id: string) =>
+  [...canvasElement.querySelectorAll(`[data-node="${id}"]`)].find(
+    (element) => element.getClientRects().length > 0,
+  );
+const scroll = (target: Element | undefined, deltaY: number) =>
+  target?.dispatchEvent(new WheelEvent("wheel", { deltaY, bubbles: true, cancelable: true }));
+const cameraScale = (canvasElement: HTMLElement) =>
+  canvasElement.querySelector<HTMLElement>(".xray-camera")?.style.transform.match(/scale\(([\d.]+)\)/)?.[1];
+
+export const ZoomsInOnScroll: Story = {
+  play: async ({ args, canvasElement }) => {
+    // Scrolling up over a node zooms into it: far enough, and it carries on in by itself.
+    scroll(shownNode(canvasElement, "api"), -400);
+    await expect(args.onSelect).toHaveBeenCalledWith("api");
+  },
+};
+
+export const SettlesBackFromShortScroll: Story = {
+  play: async ({ args, canvasElement }) => {
+    // A little way in, the camera follows; let go there and it settles back to the overview.
+    scroll(shownNode(canvasElement, "api"), -60);
+    await waitFor(() => expect(Number(cameraScale(canvasElement))).toBeGreaterThan(1));
+    await waitFor(() => expect(cameraScale(canvasElement)).toBe("1"), { timeout: 2500 });
+    await expect(args.onSelect).not.toHaveBeenCalled();
+  },
+};
+
+export const NoZoomOverEmptySpace: Story = {
+  play: async ({ args, canvas, canvasElement }) => {
+    // Away from every node and trace (the top-left corner), there's nothing to zoom into.
+    canvas
+      .getByRole("region", { name: "Infrastructure" })
+      .dispatchEvent(new WheelEvent("wheel", { deltaY: -400, bubbles: true, cancelable: true }));
+    await expect(cameraScale(canvasElement)).toBe("1");
+    await expect(args.onSelect).not.toHaveBeenCalled();
+  },
+};
+
+export const ClosesOnScrollOut: Story = {
+  play: async ({ args, canvas }) => {
+    const region = canvas.getByRole("region", { name: "Infrastructure" });
+    // In the overview, a little scrolling down doesn't leave; as far as leaving a node takes does.
+    scroll(region, 60);
+    await expect(args.onClose).not.toHaveBeenCalled();
+    scroll(region, 200);
+    await expect(args.onClose).toHaveBeenCalledOnce();
+    await expect(args.onSelect).not.toHaveBeenCalled();
+  },
+};
+
 export const ZoomsOutWithArrow: Story = {
   args: { selected: "api" },
   play: async ({ args, canvas, userEvent }) => {
@@ -123,6 +174,36 @@ export const TraceGroup: Story = {
     // Leaving works as it does for nodes.
     await userEvent.keyboard("{Escape}");
     await expect(args.onSelect).toHaveBeenCalledWith(null);
+  },
+};
+
+export const EntersNodeFromGroup: Story = {
+  args: { selected: "job-queue" },
+  play: async ({ args, canvas, userEvent }) => {
+    const group = graphs.runtime.traceGroups.find((candidate) => candidate.id === "job-queue");
+    const firstLine = Object.values(group?.labels ?? {})[0][0];
+    await waitFor(() => expect(canvas.getByText(firstLine)).toBeVisible(), { timeout: 2500 });
+
+    // Once the camera rests there, the group's nodes zoom in from its view; the rest aren't buttons.
+    const redis = (
+      await canvas.findAllByRole("button", { name: /^Redis:/ }, { timeout: 2500 })
+    ).find((element) => element.getClientRects().length > 0);
+    await expect(canvas.queryByRole("button", { name: /^Postgres:/ })).toBeNull();
+    if (redis) await userEvent.click(redis);
+    await expect(args.onSelect).toHaveBeenCalledWith("redis", "job-queue");
+  },
+};
+
+export const NodeFromGroupZoomsOutToGroup: Story = {
+  args: { selected: "redis", parent: "job-queue" },
+  play: async ({ args, canvas, userEvent }) => {
+    const heading = await canvas.findByRole("heading", { name: /^Redis/ });
+    await waitFor(() => expect(heading).toBeVisible(), { timeout: 2500 });
+
+    // Zooming out goes back to the group it was entered from, not to the overview.
+    await userEvent.keyboard("{Escape}");
+    await expect(args.onSelect).toHaveBeenCalledWith("job-queue");
+    await expect(args.onClose).not.toHaveBeenCalled();
   },
 };
 

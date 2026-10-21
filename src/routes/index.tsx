@@ -9,15 +9,18 @@ import { Xray } from "@/components/xray";
 import { useXrayWindow } from "@/hooks/use-xray-window";
 import { graphs, type GraphId } from "@/lib/graphs";
 import { isZoomTarget } from "@/lib/infra-graph";
+import { enterableFrom } from "@/lib/trace-groups";
 
 /** How long the x-ray fades in or out (the interior's opacity transition in `styles.css`). */
 const FADE_MS = 800;
 
 // `?xray` opens the interior, and `?xray=<node or trace group>` also zooms into it. A bare `?xray`
 // parses as an empty string, so "open" means present, not truthy; an unknown id shows the overview.
-// `view` picks the x-ray's graph: absent (or unknown) is the runtime view.
+// `view` picks the x-ray's graph: absent (or unknown) is the runtime view. `group` is the group of
+// traces a node was entered from (zooming out goes back to it); ignored unless the node is on it.
 const homeSearchSchema = z.object({
   xray: z.string().optional(),
+  group: z.string().optional(),
   view: z
     .enum(["runtime", "deploy"] satisfies GraphId[])
     .optional()
@@ -25,11 +28,12 @@ const homeSearchSchema = z.object({
 });
 
 const HomeComponent = () => {
-  const { xray, view = "runtime" } = Route.useSearch();
+  const { xray, group, view = "runtime" } = Route.useSearch();
   const navigate = Route.useNavigate();
   const isOpen = xray !== undefined;
   const graph = graphs[view];
   const selected = xray && isZoomTarget(graph, xray) ? xray : null;
+  const parent = group && selected && enterableFrom(graph, group).includes(selected) ? group : null;
 
   const surfaceRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLButtonElement>(null);
@@ -95,9 +99,10 @@ const HomeComponent = () => {
         open={isOpen}
         graphId={view}
         selected={selected}
-        onSelect={(id) =>
+        parent={parent}
+        onSelect={(id, from) =>
           navigate({
-            search: (search) => ({ ...search, xray: id ?? "" }),
+            search: (search) => ({ ...search, xray: id ?? "", group: from }),
             resetScroll: false,
           })
         }

@@ -28,6 +28,17 @@ export const LABEL_STYLE = {
 export const traceGroupOf = (graph: Graph, id: string) =>
   graph.traceGroups.find((group) => group.edges.includes(id));
 
+/** The nodes a group's traces connect. */
+export const nodesOf = (group: TraceGroup) => [
+  ...new Set(group.edges.flatMap((edge) => edge.split("->"))),
+];
+
+/** The nodes that can be zoomed into from a group's view: those it connects that have details. */
+export const enterableFrom = (graph: Graph, groupId: string) => {
+  const group = graph.traceGroups.find((candidate) => candidate.id === groupId);
+  return group ? nodesOf(group).filter((id) => id in graph.details) : [];
+};
+
 /** How far `point` is from the segment a→b. */
 const distanceToSegment = (point: Point, a: Point, b: Point) => {
   const dx = b.x - a.x;
@@ -39,6 +50,9 @@ const distanceToSegment = (point: Point, a: Point, b: Point) => {
       : Math.min(1, Math.max(0, ((point.x - a.x) * dx + (point.y - a.y) * dy) / lengthSquared));
   return Math.hypot(point.x - (a.x + t * dx), point.y - (a.y + t * dy));
 };
+
+/** How near a trace (viewBox units) the pointer picks its group. */
+export const NEAR_TRACE = 30;
 
 /**
  * The group of the trace nearest `point` in a layout (viewBox units), if that trace is no further

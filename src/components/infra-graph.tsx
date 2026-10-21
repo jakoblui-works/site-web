@@ -10,7 +10,7 @@ import {
   type NodeKind,
   type Point,
 } from "@/lib/infra-graph";
-import { nearestTraceGroup } from "@/lib/trace-groups";
+import { NEAR_TRACE, nearestTraceGroup, nodesOf } from "@/lib/trace-groups";
 import { cn } from "@/lib/utils";
 
 import { InfraLogo } from "./infra-logos";
@@ -19,8 +19,6 @@ import { InfraLogo } from "./infra-logos";
 const EDGE_GAP = 6;
 /** How wide a trace's invisible hit area is (viewBox units), so it's easy to click. */
 const HIT_WIDTH = 14;
-/** How near a trace (viewBox units) the pointer picks its group. */
-const NEAR_TRACE = 30;
 /** Node padding, and the logo column on the node's left (one logo, or two stacked). */
 const PADDING = 14;
 const LOGO_SIZE = { single: 24, stacked: 18 };
@@ -98,12 +96,22 @@ type InfraGraphProps = {
    * dims in step with its snapshots.
    */
   dim?: number;
+  /**
+   * The selection the dimming starts from (at `dim` 0), fading to this one's (at 1): zooming from a
+   * group of traces into one of its nodes. By default, none: everything bright.
+   */
+  from?: Selection | null;
   /** Makes the nodes and the groups of traces buttons (click, Enter or Space) that select themselves. */
   onSelect?: (id: string) => void;
+  /** Which nodes and groups `onSelect` makes buttons of (default: all). */
+  targets?: string[];
   /** The node the camera is zooming into: its header fades out as the camera passes it (0..1). */
   zoomedInto?: { id: string; headerOpacity: number } | null;
   className?: string;
 };
+
+/** What's selected: a node, or a group of traces. */
+type Selection = { selected?: string | null; selectedGroup?: string | null };
 
 export const InfraGraph = ({
   graph,
@@ -114,7 +122,9 @@ export const InfraGraph = ({
   selected = null,
   selectedGroup = null,
   dim = 1,
+  from = null,
   onSelect,
+  targets,
   zoomedInto = null,
   className,
 }: InfraGraphProps) => {
@@ -131,35 +141,63 @@ export const InfraGraph = ({
     return nearestTraceGroup(graph, layout, point, NEAR_TRACE)?.id ?? null;
   };
   const { node: size, casing, positions } = layout;
-  const group = graph.traceGroups.find((candidate) => candidate.id === selectedGroup);
-  // What stays bright: everything, or the selected node and its traces, or the selected group.
-  const isLit = {
-    edge: (edge: GraphEdge) =>
-      group
-        ? group.edges.includes(edgeId(edge))
-        : !selected || edge.from === selected || edge.to === selected,
-    node: (id: string) =>
-      group
-        ? group.edges.some((candidate) => candidate.split("->").includes(id))
-        : !selected || selected === id,
+  /**
+   * What a selection keeps bright (everything, or a node and its traces, or a group's traces and the
+   * parts they connect), and how far the rest dims: around a group it recedes further, so its labels
+   * read clearly.
+   */
+  const lighting = ({ selected = null, selectedGroup = null }: Selection) => {
+    const group = graph.traceGroups.find((candidate) => candidate.id === selectedGroup);
+    return {
+      any: !!(selected || group),
+      edge: (edge: GraphEdge) =>
+        group
+          ? group.edges.includes(edgeId(edge))
+          : !selected || edge.from === selected || edge.to === selected,
+      node: (id: string) => (group ? nodesOf(group).includes(id) : !selected || selected === id),
+      dimmed: group ? { node: 0.15, edge: 0.1 } : { node: 0.35, edge: 0.2 },
+    };
   };
-  /** The opacity of what isn't lit, `dim` of the way down to `dimmed`. */
-  const unlit = (dimmed: number) => ({ opacity: 1 - dim * (1 - dimmed) });
+  const lit = lighting({ selected, selectedGroup });
+  const litBefore = lighting(from ?? {});
+  /** An element's opacity, `dim` of the way from how it was lit to how it's lit now. */
+  const opacityOf = (kind: "node" | "edge", wasLit: boolean, isLit: boolean) => {
+    const before = wasLit ? 1 : litBefore.dimmed[kind];
+    const after = isLit ? 1 : lit.dimmed[kind];
+    const opacity = before + (after - before) * dim;
+    return opacity === 1 ? undefined : { opacity };
+  };
+  /**
+   * A lit trace's colour: brighter while something's selected, `dim` of the way from before. Only
+   * set inline while fading from another selection (`from`), in step with the zoom.
+   */
+  const traceTone = (wasBright: boolean, isBright: boolean) => {
+    if (!from || wasBright === isBright) return undefined;
+    const bright = wasBright ? 1 - dim : dim;
+    return {
+      opacity: 0.5 + 0.5 * bright,
+      color: `color-mix(in oklab, var(--color-violet-200) ${bright * 100}%, var(--color-violet-300))`,
+    };
+  };
+  const canSelect = (id: string) => !!onSelect && (!targets || targets.includes(id));
+  const groupsSelectable = graph.traceGroups.some((traceGroup) => canSelect(traceGroup.id));
   /** Buttons that select themselves with a click, Enter or Space (when `onSelect` is set). */
   const selectable = (id: string, label: string, pressed: boolean) =>
-    onSelect && {
-      role: "button",
-      tabIndex: 0,
-      "aria-label": label,
-      "aria-pressed": pressed,
-      onClick: () => onSelect(id),
-      onKeyDown: (event: KeyboardEvent<SVGGElement>) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          onSelect(id);
+    onSelect && canSelect(id)
+      ? {
+          role: "button",
+          tabIndex: 0,
+          "aria-label": label,
+          "aria-pressed": pressed,
+          onClick: () => onSelect(id),
+          onKeyDown: (event: KeyboardEvent<SVGGElement>) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              onSelect(id);
+            }
+          },
         }
-      },
-    };
+      : undefined;
 
   return (
     <svg
@@ -240,7 +278,7 @@ export const InfraGraph = ({
 
       {/* Near the traces, under them: hovering or clicking picks the group of the nearest trace.
           Mouse only (keyboard users have the groups' buttons); a trace itself still wins. */}
-      {onSelect && (
+      {onSelect && groupsSelectable && (
         <rect
           aria-hidden
           width={layout.width}
@@ -263,13 +301,13 @@ export const InfraGraph = ({
           <g
             key={traceGroup.id}
             data-group={traceGroup.id}
-            data-hovered={(onSelect && hoveredGroup === traceGroup.id) || undefined}
+            data-hovered={(groupsSelectable && hoveredGroup === traceGroup.id) || undefined}
             {...selectable(
               traceGroup.id,
               `${traceGroup.title}: ${traceGroup.path}`,
               selectedGroup === traceGroup.id,
             )}
-            className={cn("group/trace outline-none", onSelect && "cursor-pointer")}
+            className={cn("group/trace outline-none", canSelect(traceGroup.id) && "cursor-pointer")}
           >
             {graph.edges
               .filter((edge) => traceGroup.edges.includes(edgeId(edge)))
@@ -277,21 +315,24 @@ export const InfraGraph = ({
                 const route = edgeRoute(layout, edge);
                 const [start] = route;
                 const end = withGap(route, EDGE_GAP);
-                const lit = isLit.edge(edge);
+                const isLit = lit.edge(edge);
+                const wasLit = litBefore.edge(edge);
+                const tone = traceTone(litBefore.any && wasLit, lit.any && isLit);
                 return (
                   <g
                     key={edgeId(edge)}
                     data-edge={edgeId(edge)}
-                    // Around a selected group, the rest recedes further, so its labels read clearly.
-                    style={lit ? undefined : unlit(group ? 0.1 : 0.2)}
+                    style={opacityOf("edge", wasLit, isLit)}
                   >
                     {/* The trace, its arrowhead and its via in one solid colour, faded together, so
                         they read as one piece instead of overlapping see-through parts. */}
                     <g
+                      style={tone}
                       className={cn(
-                        "text-violet-300 opacity-50 transition-[color,opacity] duration-200",
-                        (selected || group) && lit && "text-violet-200 opacity-100",
-                        onSelect &&
+                        "text-violet-300 opacity-50",
+                        tone ? "transition-none" : "transition-[color,opacity] duration-200",
+                        lit.any && isLit && "text-violet-200 opacity-100",
+                        canSelect(traceGroup.id) &&
                           "group-hover/trace:text-violet-200 group-hover/trace:opacity-100 group-focus-visible/trace:text-violet-100 group-focus-visible/trace:opacity-100 group-data-hovered/trace:text-violet-200 group-data-hovered/trace:opacity-100",
                       )}
                     >
@@ -343,8 +384,8 @@ export const InfraGraph = ({
               key={node.id}
               data-node={node.id}
               {...selectable(node.id, `${node.label}: ${node.detail}`, selected === node.id)}
-              style={isLit.node(node.id) ? undefined : unlit(group ? 0.15 : 0.35)}
-              className={cn("group outline-none", onSelect && "cursor-pointer")}
+              style={opacityOf("node", litBefore.node(node.id), lit.node(node.id))}
+              className={cn("group outline-none", canSelect(node.id) && "cursor-pointer")}
             >
               {/* Focus ring for keyboard users. */}
               <rect
@@ -364,7 +405,7 @@ export const InfraGraph = ({
                 className={cn(
                   "transition-[stroke] duration-200 [stroke-width:1.5]",
                   nodeStyles[node.kind],
-                  onSelect && "group-hover:stroke-violet-200",
+                  canSelect(node.id) && "group-hover:stroke-violet-200",
                   selected === node.id &&
                     "stroke-violet-200 [stroke-width:2]",
                 )}
