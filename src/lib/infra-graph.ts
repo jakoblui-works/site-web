@@ -84,6 +84,9 @@ export type LabelSpot = {
   dy?: number;
 };
 
+/** The board's dot grid, in viewBox units: node centres and the casing's edges sit on it. */
+export const GRID = 20;
+
 /** Where everything sits in one arrangement. Positions are node centres, in viewBox units. */
 export type GraphLayout = {
   width: number;

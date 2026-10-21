@@ -8,7 +8,7 @@ export type Site = {
 /** The sites in the header's switcher. The hub is served at the apex domain but shown as `www`. */
 export const sites: Site[] = [
   { subdomain: "www", label: "Home", url: "https://jakoblui.com" },
-  { subdomain: "cv", label: "CV generator", url: "https://cv.jakoblui.com" },
+  { subdomain: "cv", label: "CV assembler", url: "https://cv.jakoblui.com" },
 ];
 
 export const hub = sites[0];

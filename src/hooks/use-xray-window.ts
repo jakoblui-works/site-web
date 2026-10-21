@@ -1,122 +1,147 @@
-import { useLayoutEffect, useRef, type RefObject } from "react";
+import { useLayoutEffect, type RefObject } from "react";
 
-type Side = "top" | "right" | "bottom" | "left";
-type Hole = Record<Side | "fade", number>;
-type Window = Record<Side | "fade-x" | "fade-y", number>;
+import { bandFor, bottomFrost, type Box, xrayWindow } from "@/lib/xray-window";
 
-/** Matches the strength transition in `styles.css`. */
-const ANIMATION_MS = 800;
-/** The hole under the panel only softens at its very edge (the panel covers it). */
-const HOLE_FADE = 12;
 /** Wide screens show the look-inside panel; phones a button instead (Tailwind's `lg`). */
 const WIDE = 1024;
+/** The masks are drawn at this fraction of the screen's size and scaled up: blurred, they need no more. */
+const SCALE = 1 / 4;
 
 /**
- * The window's shape, in viewport px: the clear area (where the surface is fully gone, measured from
- * the screen's edges; the graph is fitted inside it) and how far the opacity gradient reaches
- * outwards from it, across and down (a smoothstep curve, see `styles.css`). Where the fade is longer
- * than the clear margin, the window starts past the screen edge, so the edge is already partly
- * see-through. Phones have little room across, so their side fade is shorter.
+ * The graph's clear area, as margins from the screen's edges, in viewport px: the graph is fitted
+ * inside it, and the window is fully clear over it (see `xrayWindow`). At the bottom, it keeps
+ * clear of the window's strip of frost.
  */
-const windowShape = (vw: number, vh: number) =>
-  vw >= WIDE
-    ? {
-        clearX: 0.12 * vw,
-        clearY: 0.12 * vh,
-        fadeX: 0.3 * Math.min(vw, vh),
-        fadeY: 0.2 * Math.min(vw, vh),
-      }
-    : { clearX: 0.08 * vw, clearY: 0.11 * vh, fadeX: 0.25 * vw, fadeY: 0.3 * vh };
+const clearArea = (vw: number, vh: number) => {
+  const { x, y } = vw >= WIDE ? { x: 0.12 * vw, y: 0.12 * vh } : { x: 0.08 * vw, y: 0.11 * vh };
+  return { x, y, bottom: Math.max(y, bottomFrost(bandFor(vw))) };
+};
 
-const isShown = (element: HTMLElement) => element.getClientRects().length > 0;
+/** An element's content box (inside its padding), in viewport px. */
+const contentBox = (element: Element): Box => {
+  const box = element.getBoundingClientRect();
+  const style = getComputedStyle(element);
+  return {
+    left: box.left + parseFloat(style.paddingLeft),
+    top: box.top + parseFloat(style.paddingTop),
+    right: box.right - parseFloat(style.paddingRight),
+    bottom: box.bottom - parseFloat(style.paddingBottom),
+  };
+};
 
 /**
- * Lays out the x-ray's masks on the surface (see `styles.css`): the hole under the look-inside panel
- * (wide screens only) and the window over the visible screen. Opening only turns the window's
- * strength up (via `data-open`); the content is masked from opening until the strength is back to 0.
- * Insets are px relative to the surface.
+ * The window's two masks, as images of the screen: the window itself (opaque where the interior
+ * shows), and its complement, the rim (opaque where the surface does). Baked once per shape: drawn
+ * sharp (the rounded rectangle and its tab together), then blurred, which a CSS gradient can't do.
  */
-export const useXrayWindow = (
-  surfaceRef: RefObject<HTMLElement | null>,
-  panelRef: RefObject<HTMLElement | null>,
-  open: boolean,
+const drawMasks = (
+  vw: number,
+  vh: number,
+  { shape, radius, tab, tabRadius, band }: ReturnType<typeof xrayWindow>,
 ) => {
-  const firstRun = useRef(true);
+  // The sharp window, a band wider than the screen on each side, so what runs off the screen
+  // still blurs as if it went on.
+  const margin = band * SCALE;
+  const sharp = document.createElement("canvas");
+  sharp.width = Math.ceil(vw * SCALE + 2 * margin);
+  sharp.height = Math.ceil(vh * SCALE + 2 * margin);
+  const outline = sharp.getContext("2d");
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.ceil(vw * SCALE);
+  canvas.height = Math.ceil(vh * SCALE);
+  const context = canvas.getContext("2d");
+  if (!outline || !context) return null;
+  const parts: [Box, number][] = [[shape, radius]];
+  if (tab) parts.push([tab, tabRadius]);
+  outline.beginPath();
+  for (const [box, corner] of parts) {
+    outline.roundRect(
+      box.left * SCALE + margin,
+      box.top * SCALE + margin,
+      (box.right - box.left) * SCALE,
+      (box.bottom - box.top) * SCALE,
+      corner * SCALE,
+    );
+  }
+  outline.fill();
+  const drawWindow = () => {
+    // A Gaussian edge is about 4 sigma wide.
+    context.filter = `blur(${(band / 4) * SCALE}px)`;
+    context.drawImage(sharp, -margin, -margin);
+  };
+  drawWindow();
+  const inside = canvas.toDataURL();
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.filter = "none";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.globalCompositeOperation = "destination-out";
+  drawWindow();
+  return { window: inside, rim: canvas.toDataURL() };
+};
 
+const apply = (style: CSSStyleDeclaration, values: Record<string, number | string>) => {
+  for (const [key, value] of Object.entries(values)) {
+    style.setProperty(`--xray-${key}`, typeof value === "number" ? `${value}px` : value);
+  }
+};
+
+/**
+ * Publishes the x-ray's window (see `styles.css`). On the root: the graph's clear area (see
+ * `.xray-content`), the screen's size and the window's masks, drawn around the clear area, the hero
+ * (`data-xray-cover`), the header and its items (`data-xray-solid`), all inside the surface. While `settled`, the rim's offset
+ * into the surface too, for its mask (it may be scrolled; scrolling is locked while open). Follows
+ * the screen's size and the hero's.
+ */
+export const useXrayWindow = (surfaceRef: RefObject<HTMLElement | null>, settled: boolean) => {
   useLayoutEffect(() => {
     const surface = surfaceRef.current;
-    const panel = panelRef.current;
-    if (!surface || !panel) return;
-
-    const apply = (name: "xray" | "hole", insets: Hole | Window) => {
-      for (const [key, value] of Object.entries(insets)) {
-        surface.style.setProperty(`--${name}-${key}`, `${value}px`);
-      }
-    };
-
-    const hole = (): Hole => {
-      const s = surface.getBoundingClientRect();
-      if (!isShown(panel)) {
-        // No hole: insets that cover the whole surface.
-        return { top: s.height, right: s.width, bottom: s.height, left: s.width, fade: 0 };
-      }
-      const p = panel.getBoundingClientRect();
-      return {
-        top: p.top - s.top,
-        right: s.right - p.right,
-        bottom: s.bottom - p.bottom,
-        left: p.left - s.left,
-        fade: HOLE_FADE,
-      };
-    };
-
-    // Over the visible part of the surface (scrolling is locked while open). Also publishes the
-    // clear area for the interior, which fits the graph inside it (see `.xray-content`).
-    const window_ = (): Window => {
-      const s = surface.getBoundingClientRect();
+    const hero = surface?.querySelector("[data-xray-cover]");
+    let drawn = "";
+    const place = () => {
       const vw = window.innerWidth;
       const vh = window.innerHeight;
-      const shape = windowShape(vw, vh);
+      const clear = clearArea(vw, vh);
       const root = document.documentElement.style;
-      root.setProperty("--xray-clear-x", `${shape.clearX}px`);
-      root.setProperty("--xray-clear-y", `${shape.clearY}px`);
-      const x = shape.clearX - shape.fadeX;
-      const y = shape.clearY - shape.fadeY;
-      return {
-        top: Math.max(0, -s.top) + y,
-        right: x,
-        bottom: Math.max(0, s.bottom - vh) + y,
-        left: x,
-        "fade-x": shape.fadeX,
-        "fade-y": shape.fadeY,
-      };
-    };
-
-    const place = () => {
-      apply("hole", hole());
-      // The window is measured when opening starts and then stays put until it's unused again.
-      if (open || !surface.dataset.masked) apply("xray", window_());
+      apply(root, {
+        "clear-x": clear.x,
+        "clear-y": clear.y,
+        "clear-bottom": clear.bottom,
+        width: vw,
+        height: vh,
+      });
+      if (!surface) return;
+      const shape = xrayWindow({
+        width: vw,
+        height: vh,
+        clear,
+        // No hero: the clear area alone.
+        hero: hero ? contentBox(hero) : { left: vw, top: vh, right: 0, bottom: 0 },
+        header: surface.querySelector("header")?.offsetHeight ?? 0,
+        // What's laid out of them (a label kept only for screen readers isn't).
+        solid: [...surface.querySelectorAll("[data-xray-solid]")]
+          .map((item) => item.getBoundingClientRect())
+          .filter((box) => box.width > 1 && box.height > 1),
+      });
+      // Redrawn only when the shape changes, so the interior isn't masked again for nothing.
+      const key = JSON.stringify([vw, vh, shape]);
+      if (key !== drawn) {
+        const masks = drawMasks(vw, vh, shape);
+        if (masks) {
+          apply(root, { window: `url("${masks.window}")`, rim: `url("${masks.rim}")` });
+          drawn = key;
+        }
+      }
+      if (!settled) return;
+      apply(surface.style, { "rim-top": Math.max(0, -surface.getBoundingClientRect().top) });
     };
     place();
-
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    if (open) {
-      surface.dataset.masked = "";
-    } else if (!firstRun.current) {
-      // Closing: keep the content masked until the strength is back to 0.
-      timer = setTimeout(() => delete surface.dataset.masked, ANIMATION_MS);
-    }
-    firstRun.current = false;
-
-    const observer = new ResizeObserver(place);
-    observer.observe(surface);
-    observer.observe(panel);
     window.addEventListener("resize", place);
-    void document.fonts.ready.then(place);
+    // The hero changes size with the screen, and once the fonts have loaded.
+    const observer = new ResizeObserver(place);
+    if (hero) observer.observe(hero);
     return () => {
-      clearTimeout(timer);
-      observer.disconnect();
       window.removeEventListener("resize", place);
+      observer.disconnect();
     };
-  }, [surfaceRef, panelRef, open]);
+  }, [surfaceRef, settled]);
 };

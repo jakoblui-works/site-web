@@ -204,125 +204,44 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
-/* X-ray: the interior sits behind the page (fixed, underneath); the page itself, the surface, is
-   made see-through. Two masks, both as px insets relative to the surface (set by `useXrayWindow`):
-   - The window (--xray-*): a frosted-winter-window gradient, opaque at the screen's edges and
-     transparent inside; the four edge fades add up, so the band is thickest in the corners.
-     Its shape is fixed while it's in use: opening only turns its strength up.
-   - The hole (--hole-*): on wide screens, a hole in the surface's background under the
-     look-inside panel, so the interior shows through it while closed.
-   --xray-strength (0 solid, 1 see-through) is the only thing that animates. */
-@property --xray-strength {
-  syntax: "<number>";
-  inherits: true;
-  initial-value: 0;
+/* X-ray: the interior is fixed on top of the page (the surface: header and hero) and seen through a
+   window: frosted glass that turns into clear glass over a short band (`BAND`), transparent where
+   the surface shows through, opaque inside. The window is a rounded rectangle covering the graph's
+   clear area and the hero, its fade reaching into the header (`xrayWindow`); a blurred rounded
+   rectangle, which gradients can't draw, so it's baked into an image of the screen by
+   `useXrayWindow`. The window's shape is fixed; only the interior's opacity animates (0 closed, 1
+   open), which browsers do cheaply, Firefox too (it redrew an animated mask on every frame). Closed,
+   the look-inside panel shows a picture of the interior instead. */
+.xray-interior {
+  mask-image: var(--xray-window);
+  mask-size: 100% 100%;
+  mask-repeat: no-repeat;
+  opacity: 0;
+  transition: opacity 800ms ease-in-out;
+}
+.xray-interior[data-open] {
+  opacity: 1;
 }
 
-.xray-surface {
-  transition: --xray-strength 800ms ease-in-out;
+/* Once open (the fade done, `data-settled`), the same picture the other way round: the interior
+   behind, unmasked, and the surface over it with the window's complement (the rim) as its mask,
+   placed where the screen is on the surface (set by `useXrayWindow`). A zoom then only changes the
+   interior, which Firefox would otherwise have to mask again on every frame. Closing turns it back
+   at once, before the fade. */
+.xray-surface[data-settled] ~ .xray-interior {
+  z-index: 0;
+  mask-image: none;
 }
-.xray-surface[data-open] {
-  --xray-strength: 1;
-}
-
-/* The surface's content, while the x-ray is in use: the window, plus a uniform layer that is
-   opaque at strength 0 and gone at strength 1. The window's edge falls off along a smoothstep
-   curve, alpha = 1 - (3t^2 - 2t^3) across the fade (9 stops): gentle at both ends, so the surface
-   eases away from the edge and eases out into nothing, and text fades instead of cutting off.
-   The fade can differ across (--xray-fade-x) and down (--xray-fade-y).
-   Not masked while closed. */
-.xray-surface[data-masked] > .xray-surface-content {
-  mask-image:
-    linear-gradient(
-      to bottom,
-      black var(--xray-top),
-      rgb(0 0 0 / 0.957) calc(var(--xray-top) + var(--xray-fade-y) * 0.125),
-      rgb(0 0 0 / 0.844) calc(var(--xray-top) + var(--xray-fade-y) * 0.25),
-      rgb(0 0 0 / 0.684) calc(var(--xray-top) + var(--xray-fade-y) * 0.375),
-      rgb(0 0 0 / 0.5) calc(var(--xray-top) + var(--xray-fade-y) * 0.5),
-      rgb(0 0 0 / 0.316) calc(var(--xray-top) + var(--xray-fade-y) * 0.625),
-      rgb(0 0 0 / 0.156) calc(var(--xray-top) + var(--xray-fade-y) * 0.75),
-      rgb(0 0 0 / 0.043) calc(var(--xray-top) + var(--xray-fade-y) * 0.875),
-      transparent calc(var(--xray-top) + var(--xray-fade-y))
-    ),
-    linear-gradient(
-      to top,
-      black var(--xray-bottom),
-      rgb(0 0 0 / 0.957) calc(var(--xray-bottom) + var(--xray-fade-y) * 0.125),
-      rgb(0 0 0 / 0.844) calc(var(--xray-bottom) + var(--xray-fade-y) * 0.25),
-      rgb(0 0 0 / 0.684) calc(var(--xray-bottom) + var(--xray-fade-y) * 0.375),
-      rgb(0 0 0 / 0.5) calc(var(--xray-bottom) + var(--xray-fade-y) * 0.5),
-      rgb(0 0 0 / 0.316) calc(var(--xray-bottom) + var(--xray-fade-y) * 0.625),
-      rgb(0 0 0 / 0.156) calc(var(--xray-bottom) + var(--xray-fade-y) * 0.75),
-      rgb(0 0 0 / 0.043) calc(var(--xray-bottom) + var(--xray-fade-y) * 0.875),
-      transparent calc(var(--xray-bottom) + var(--xray-fade-y))
-    ),
-    linear-gradient(
-      to right,
-      black var(--xray-left),
-      rgb(0 0 0 / 0.957) calc(var(--xray-left) + var(--xray-fade-x) * 0.125),
-      rgb(0 0 0 / 0.844) calc(var(--xray-left) + var(--xray-fade-x) * 0.25),
-      rgb(0 0 0 / 0.684) calc(var(--xray-left) + var(--xray-fade-x) * 0.375),
-      rgb(0 0 0 / 0.5) calc(var(--xray-left) + var(--xray-fade-x) * 0.5),
-      rgb(0 0 0 / 0.316) calc(var(--xray-left) + var(--xray-fade-x) * 0.625),
-      rgb(0 0 0 / 0.156) calc(var(--xray-left) + var(--xray-fade-x) * 0.75),
-      rgb(0 0 0 / 0.043) calc(var(--xray-left) + var(--xray-fade-x) * 0.875),
-      transparent calc(var(--xray-left) + var(--xray-fade-x))
-    ),
-    linear-gradient(
-      to left,
-      black var(--xray-right),
-      rgb(0 0 0 / 0.957) calc(var(--xray-right) + var(--xray-fade-x) * 0.125),
-      rgb(0 0 0 / 0.844) calc(var(--xray-right) + var(--xray-fade-x) * 0.25),
-      rgb(0 0 0 / 0.684) calc(var(--xray-right) + var(--xray-fade-x) * 0.375),
-      rgb(0 0 0 / 0.5) calc(var(--xray-right) + var(--xray-fade-x) * 0.5),
-      rgb(0 0 0 / 0.316) calc(var(--xray-right) + var(--xray-fade-x) * 0.625),
-      rgb(0 0 0 / 0.156) calc(var(--xray-right) + var(--xray-fade-x) * 0.75),
-      rgb(0 0 0 / 0.043) calc(var(--xray-right) + var(--xray-fade-x) * 0.875),
-      transparent calc(var(--xray-right) + var(--xray-fade-x))
-    ),
-    linear-gradient(
-      rgb(0 0 0 / calc(1 - var(--xray-strength))),
-      rgb(0 0 0 / calc(1 - var(--xray-strength)))
-    );
-  mask-composite: add;
+.xray-surface[data-settled] > .xray-surface-content {
+  mask-image: var(--xray-rim);
+  mask-size: var(--xray-width) var(--xray-height);
+  mask-position: 0 var(--xray-rim-top);
+  mask-repeat: no-repeat;
 }
 
-/* The surface's background: has the hole under the panel (none on phones). The hole fills in as the
-   strength rises, so the whole surface fades evenly instead of leaving a clear rectangle. */
-.xray-hole {
-  mask-image:
-    linear-gradient(
-      to bottom,
-      black var(--hole-top),
-      transparent calc(var(--hole-top) + var(--hole-fade))
-    ),
-    linear-gradient(
-      to top,
-      black var(--hole-bottom),
-      transparent calc(var(--hole-bottom) + var(--hole-fade))
-    ),
-    linear-gradient(
-      to right,
-      black var(--hole-left),
-      transparent calc(var(--hole-left) + var(--hole-fade))
-    ),
-    linear-gradient(
-      to left,
-      black var(--hole-right),
-      transparent calc(var(--hole-right) + var(--hole-fade))
-    ),
-    linear-gradient(
-      rgb(0 0 0 / var(--xray-strength)),
-      rgb(0 0 0 / var(--xray-strength))
-    );
-  mask-composite: add;
-}
-
-/* The surface's background (behind the header and the hero): black frosted glass over the
-   interior. Not a backdrop blur (inside the masked surface it couldn't reach the interior while the
-   x-ray fades): it shows its own blurred, dimmed copy of the interior's graph, lined up with the
-   real one, so it fades with the surface like any other content. */
+/* The surface's background (behind the header and the hero): black frosted glass, a blurred, dimmed
+   copy of the interior's graph lined up with the real one (`FrostedGraph`), so the rim the window
+   leaves at the screen's edges reads as frost over the interior. */
 .xray-surface-bg {
   background-color: oklch(0.06 0.015 292);
   overflow: hidden;
@@ -335,7 +254,7 @@
 }
 .xray-frost-content {
   /* Fitted like `.xray-content`, so the copy lines up with the interior's graph. */
-  padding: var(--xray-clear-y, 15vh) var(--xray-clear-x, 15vw);
+  padding: var(--xray-clear-y, 15vh) var(--xray-clear-x, 15vw) var(--xray-clear-bottom, 15vh);
 }
 
 /* The view switch (`ViewSwitch`) sits just above the clear area, below the header where the clear
@@ -349,10 +268,19 @@
 }
 
 /* The look-inside panel leaves as soon as the x-ray opens and comes back as soon as it starts closing,
-   fading in with the rest of the surface. Inside the masked surface its blur can't reach the
-   interior, so it's off until the mask comes off, and then eases in instead of snapping on. */
+   so it cross-fades with the interior over it. Closed, it shows a picture of the interior behind it
+   (drawn by `FrostedGraph`: dimmed and frosted, and sharp for hover), fixed to the screen like the
+   interior, so scrolling slides the panel over it. */
 .look-inside {
-  transition-property: opacity, background-color, backdrop-filter;
+  transition-property: opacity, background-color;
+}
+.look-inside-view {
+  background-image: var(--xray-panel-view, none);
+  background-attachment: fixed;
+  background-size: 100% 100%;
+}
+.look-inside-view-clear {
+  background-image: var(--xray-panel-view-clear, none);
 }
 .xray-surface[data-open] .look-inside {
   opacity: 0;
@@ -365,23 +293,29 @@
 .xray-surface[data-open] .look-inside-button {
   opacity: 0;
 }
-.xray-surface[data-masked] .look-inside {
-  backdrop-filter: blur(0);
-}
 
-/* Open, clicks go through the see-through surface to the interior. */
-.xray-surface[data-open] {
+/* Open, the surface under the interior takes no clicks; closed, the interior (invisible) takes none. */
+.xray-surface[data-open],
+.xray-interior:not([data-open]) {
   pointer-events: none;
 }
 
-/* Distance: the interior is dimmed and desaturated, so it recedes rather than glowing in front of
-   the surface. */
+/* Distance: the interior is dimmed, so it recedes rather than glowing in front of the surface. A
+   dark layer over it rather than a filter: Firefox redraws a filtered layer on every frame of a zoom,
+   which halved its frame rate. */
 .xray-content {
+  position: relative;
   /* Fitted inside the window's clear area (where the fade has ended), so the graph is always fully
      visible; set by `useXrayWindow`. */
-  padding: var(--xray-clear-y, 15vh) var(--xray-clear-x, 15vw);
-  filter: brightness(0.9) saturate(0.85);
-  transition: opacity 300ms ease;
+  padding: var(--xray-clear-y, 15vh) var(--xray-clear-x, 15vw) var(--xray-clear-bottom, 15vh);
+}
+.xray-content::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+  background-color: rgb(0 0 0 / 0.1);
 }
 
 /* Phones: the clear area starts behind the switch, so the graph is fitted below it (the interior
@@ -396,16 +330,6 @@
   }
 }
 
-/* The dot grid, on the interior's background: behind the graph, so the droplet's board and the
-   nodes cover it. */
-.xray-interior {
-  background-image: radial-gradient(
-    color-mix(in oklch, var(--foreground) 16%, transparent) 1px,
-    transparent 1px
-  );
-  background-size: 24px 24px;
-}
-
 /* Fine grain on the interior's background: dithers the edge band's gradient over the dark
    interior (otherwise it bands into faint rings) and gives the cavity some texture. */
 .xray-interior::before {
@@ -417,22 +341,8 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-/* Closed, the interior is only seen through the glass, dimmed; hovering the panel brightens it. */
-.xray-interior:not([data-open]) {
-  pointer-events: none;
-}
-.xray-interior:not([data-open]) .xray-content {
-  opacity: 0.55;
-}
-:root:has(.look-inside:hover, .look-inside:focus-visible)
-  .xray-interior:not([data-open])
-  .xray-content {
-  opacity: 0.9;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .xray-surface,
-  .xray-content,
+  .xray-interior,
   .xray-surface .look-inside {
     transition: none;
   }

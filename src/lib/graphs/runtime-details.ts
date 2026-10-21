@@ -33,7 +33,7 @@ export const runtimeDetails: Record<string, NodeDetails> = {
     stack: ["Traefik v3.7", "Docker labels"],
     decisions: [
       "Rate limiting at the edge, not in the app: Traefik sees the real client IPs.",
-      "A general limit on the api, and a stricter per-minute limit on generating CVs.",
+      "A general limit on the api, and a stricter per-minute limit on assembling CVs.",
     ],
     links: [],
   },
@@ -47,10 +47,10 @@ export const runtimeDetails: Record<string, NodeDetails> = {
     links: [repo("site-web"), { label: "Live", url: "https://jakoblui.com" }, storybook],
   },
   "cv-web": {
-    summary: "A CV generator: pick a role, concepts and skills, get a tailored PDF.",
+    summary: "A CV assembler: pick a role, concepts and skills, get a tailored PDF.",
     stack: ["React 19", "Vite", "TanStack Router + Query", "Orval + zod", "Tailwind 4"],
     decisions: [
-      "The URL is the source of truth: generation runs as a query keyed on the selection, so a link always matches its PDF.",
+      "The URL is the source of truth: assembling runs as a query keyed on the selection, so a link always matches its PDF.",
       "The API client is generated from the OpenAPI spec, and CI fails if it drifts.",
     ],
     links: [repo("cv-web"), { label: "Live", url: "https://cv.jakoblui.com" }, storybook],
@@ -100,7 +100,7 @@ export const runtimeDetails: Record<string, NodeDetails> = {
     links: [],
   },
   garage: {
-    summary: "Self-hosted, S3-compatible object storage for the generated PDFs.",
+    summary: "Self-hosted, S3-compatible object storage for the assembled PDFs.",
     stack: ["Garage", "S3 API"],
     decisions: ["The S3 API without a cloud bucket: the same code locally and on the droplet."],
     links: [],

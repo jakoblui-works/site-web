@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 
 import { Hero } from "@/components/hero";
@@ -9,12 +9,18 @@ import { Xray } from "@/components/xray";
 import { useXrayWindow } from "@/hooks/use-xray-window";
 import { graphs, type GraphId } from "@/lib/graphs";
 import { isZoomTarget } from "@/lib/infra-graph";
+import { enterableFrom } from "@/lib/trace-groups";
+
+/** How long the x-ray fades in or out (the interior's opacity transition in `styles.css`). */
+const FADE_MS = 800;
 
 // `?xray` opens the interior, and `?xray=<node or trace group>` also zooms into it. A bare `?xray`
 // parses as an empty string, so "open" means present, not truthy; an unknown id shows the overview.
-// `view` picks the x-ray's graph: absent (or unknown) is the runtime view.
+// `view` picks the x-ray's graph: absent (or unknown) is the runtime view. `group` is the group of
+// traces a node was entered from (zooming out goes back to it); ignored unless the node is on it.
 const homeSearchSchema = z.object({
   xray: z.string().optional(),
+  group: z.string().optional(),
   view: z
     .enum(["runtime", "deploy"] satisfies GraphId[])
     .optional()
@@ -22,16 +28,29 @@ const homeSearchSchema = z.object({
 });
 
 const HomeComponent = () => {
-  const { xray, view = "runtime" } = Route.useSearch();
+  const { xray, group, view = "runtime" } = Route.useSearch();
   const navigate = Route.useNavigate();
   const isOpen = xray !== undefined;
   const graph = graphs[view];
   const selected = xray && isZoomTarget(graph, xray) ? xray : null;
+  const parent = group && selected && enterableFrom(graph, group).includes(selected) ? group : null;
 
   const surfaceRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLButtonElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  useXrayWindow(surfaceRef, panelRef, isOpen);
+  // Once the fade is done, the open x-ray settles into its other arrangement (see `styles.css`);
+  // closing leaves it at once. Opened on a `?xray` link, it starts settled.
+  const [fadedIn, setFadedIn] = useState(isOpen);
+  useEffect(() => {
+    if (!isOpen) {
+      setFadedIn(false);
+      return;
+    }
+    const timer = setTimeout(() => setFadedIn(true), FADE_MS);
+    return () => clearTimeout(timer);
+  }, [isOpen]);
+  const settled = isOpen && fadedIn;
+  useXrayWindow(surfaceRef, settled);
 
   // After closing, return focus to whichever look-inside control is shown (not on the first render).
   const wasOpen = useRef(isOpen);
@@ -46,21 +65,18 @@ const HomeComponent = () => {
 
   return (
     <>
-      {/* The surface (header and hero), in front of the interior. It holds the x-ray's mask values and
-          strength, which its background and (while the x-ray is in use) its content read. */}
+      {/* The surface (header and hero), under the interior. */}
       <div
         ref={surfaceRef}
         data-open={isOpen || undefined}
+        data-settled={settled || undefined}
         className="xray-surface relative z-10"
       >
         <div className="xray-surface-content relative z-10">
           {/* Frosted glass: a blurred copy of the interior, lined up with the real one, under black.
-              It's ordinary content, so the x-ray fades it like the rest of the surface. */}
-          <div
-            aria-hidden
-            className="xray-hole xray-surface-bg absolute inset-0 -z-10"
-          >
-            <FrostedGraph graphId={view} />
+              It also draws the look-inside panel's picture of the interior. */}
+          <div aria-hidden className="xray-surface-bg absolute inset-0 -z-10">
+            <FrostedGraph graphId={view} open={isOpen} />
           </div>
           <SiteHeader />
           <main>
@@ -78,14 +94,15 @@ const HomeComponent = () => {
           </main>
         </div>
       </div>
-      {/* The interior: fixed at z-0, so it sits behind the surface. */}
+      {/* The interior: fixed on top of the surface, seen through the window while open. */}
       <Xray
         open={isOpen}
         graphId={view}
         selected={selected}
-        onSelect={(id) =>
+        parent={parent}
+        onSelect={(id, from) =>
           navigate({
-            search: (search) => ({ ...search, xray: id ?? "" }),
+            search: (search) => ({ ...search, xray: id ?? "", group: from }),
             resetScroll: false,
           })
         }
