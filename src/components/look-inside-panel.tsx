@@ -25,7 +25,7 @@ export const LookInsidePanel = ({
       type="button"
       onClick={onClick}
       className={cn(
-        "look-inside group relative cursor-pointer overflow-hidden rounded-2xl bg-primary/10 text-left outline-none backdrop-blur-xs duration-500 hover:bg-primary/16 hover:backdrop-blur-none focus-visible:bg-primary/16 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:backdrop-blur-none motion-reduce:transition-none",
+        "look-inside group relative cursor-pointer overflow-hidden rounded-2xl bg-primary/10 text-left outline-none duration-500 hover:bg-primary/16 focus-visible:bg-primary/16 focus-visible:ring-3 focus-visible:ring-ring/50 motion-reduce:transition-none",
         className,
       )}
     >

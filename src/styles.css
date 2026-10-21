@@ -349,10 +349,10 @@
 }
 
 /* The look-inside panel leaves as soon as the x-ray opens and comes back as soon as it starts closing,
-   fading in with the rest of the surface. Inside the masked surface its blur can't reach the
-   interior, so it's off until the mask comes off, and then eases in instead of snapping on. */
+   fading in with the rest of the surface. Its frost is the interior's own blur (see
+   `.xray-content`): a backdrop blur couldn't reach the interior until the mask comes off. */
 .look-inside {
-  transition-property: opacity, background-color, backdrop-filter;
+  transition-property: opacity, background-color;
 }
 .xray-surface[data-open] .look-inside {
   opacity: 0;
@@ -364,9 +364,6 @@
 }
 .xray-surface[data-open] .look-inside-button {
   opacity: 0;
-}
-.xray-surface[data-masked] .look-inside {
-  backdrop-filter: blur(0);
 }
 
 /* Open, clicks go through the see-through surface to the interior. */
@@ -396,9 +393,9 @@
   }
 }
 
-/* The dot grid, on the interior's background: behind the graph, so the droplet's board and the
-   nodes cover it. */
-.xray-interior {
+/* The dot grid, behind the graph, so the droplet's board and the nodes cover it. On the content
+   rather than the interior, so dimming the content (closed) can't make the board see-through. */
+.xray-content {
   background-image: radial-gradient(
     color-mix(in oklch, var(--foreground) 16%, transparent) 1px,
     transparent 1px
@@ -417,17 +414,24 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-/* Closed, the interior is only seen through the glass, dimmed; hovering the panel brightens it. */
+/* Closed, the interior is only seen through the glass, dimmed and frosted; hovering the panel
+   brightens and clears it. The frost comes in as the x-ray starts closing (opening clears it at
+   once). */
 .xray-interior:not([data-open]) {
   pointer-events: none;
 }
 .xray-interior:not([data-open]) .xray-content {
   opacity: 0.55;
+  filter: brightness(0.9) saturate(0.85) blur(4px);
+  transition:
+    opacity 300ms ease,
+    filter 500ms ease;
 }
 :root:has(.look-inside:hover, .look-inside:focus-visible)
   .xray-interior:not([data-open])
   .xray-content {
   opacity: 0.9;
+  filter: brightness(0.9) saturate(0.85) blur(0);
 }
 
 @media (prefers-reduced-motion: reduce) {
