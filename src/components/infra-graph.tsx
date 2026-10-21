@@ -93,10 +93,11 @@ type InfraGraphProps = {
   /** The selected group of traces: its traces and the parts they connect stay bright. */
   selectedGroup?: string | null;
   /**
-   * Whether a selection dims everything else (default). Off, only the selection itself shows: how
-   * the x-ray's zoom snapshots start, before the dimming has faded in.
+   * How far a selection has dimmed everything else (0..1, default 1). At 0 only the selection itself
+   * shows: how the x-ray's zoom snapshots start. The x-ray drives it with the zoom, so the live graph
+   * dims in step with its snapshots.
    */
-  dim?: boolean;
+  dim?: number;
   /** Makes the nodes and the groups of traces buttons (click, Enter or Space) that select themselves. */
   onSelect?: (id: string) => void;
   /** The node the camera is zooming into: its header fades out as the camera passes it (0..1). */
@@ -112,7 +113,7 @@ export const InfraGraph = ({
   grid = false,
   selected = null,
   selectedGroup = null,
-  dim = true,
+  dim = 1,
   onSelect,
   zoomedInto = null,
   className,
@@ -142,6 +143,8 @@ export const InfraGraph = ({
         ? group.edges.some((candidate) => candidate.split("->").includes(id))
         : !selected || selected === id,
   };
+  /** The opacity of what isn't lit, `dim` of the way down to `dimmed`. */
+  const unlit = (dimmed: number) => ({ opacity: 1 - dim * (1 - dimmed) });
   /** Buttons that select themselves with a click, Enter or Space (when `onSelect` is set). */
   const selectable = (id: string, label: string, pressed: boolean) =>
     onSelect && {
@@ -279,11 +282,8 @@ export const InfraGraph = ({
                   <g
                     key={edgeId(edge)}
                     data-edge={edgeId(edge)}
-                    className={cn(
-                      "transition-opacity duration-300",
-                      // Around a selected group, the rest recedes further, so its labels read clearly.
-                      dim && !lit && (group ? "opacity-10" : "opacity-20"),
-                    )}
+                    // Around a selected group, the rest recedes further, so its labels read clearly.
+                    style={lit ? undefined : unlit(group ? 0.1 : 0.2)}
                   >
                     {/* The trace, its arrowhead and its via in one solid colour, faded together, so
                         they read as one piece instead of overlapping see-through parts. */}
@@ -343,11 +343,8 @@ export const InfraGraph = ({
               key={node.id}
               data-node={node.id}
               {...selectable(node.id, `${node.label}: ${node.detail}`, selected === node.id)}
-              className={cn(
-                "group outline-none transition-opacity duration-300",
-                onSelect && "cursor-pointer",
-                dim && !isLit.node(node.id) && (group ? "opacity-15" : "opacity-35"),
-              )}
+              style={isLit.node(node.id) ? undefined : unlit(group ? 0.15 : 0.35)}
+              className={cn("group outline-none", onSelect && "cursor-pointer")}
             >
               {/* Focus ring for keyboard users. */}
               <rect

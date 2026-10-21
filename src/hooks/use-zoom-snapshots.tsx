@@ -167,7 +167,7 @@ export const useZoomSnapshots = (
         decorative
         grid
         {...(isGroup(shot.id) ? { selectedGroup: shot.id } : { selected: shot.id })}
-        dim={shot.kind !== "start"}
+        dim={shot.kind === "start" ? 0 : 1}
         zoomedInto={
           shot.kind !== "start" && !isGroup(shot.id) ? { id: shot.id, headerOpacity: 0 } : null
         }

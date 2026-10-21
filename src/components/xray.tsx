@@ -59,6 +59,12 @@ const LEAVE_BELOW = 0.75;
  */
 const SETTLE_MS = 400;
 
+/**
+ * How far the rest of the graph has dimmed at `t`: as a node's header fades, and as the target's
+ * snapshot fades in over the start's, so the live graph and its snapshots always match.
+ */
+const dimAt = (t: number) => ramp(t, 0.15, 0.5);
+
 /** How far the camera is into a node: 0 the overview, 1 inside it. */
 type View = { plan: ZoomPlan; t: number };
 
@@ -415,14 +421,13 @@ export const Xray = ({
   const shownGroup = graph.traceGroups.some((group) => group.id === shown);
   const zoom = view && zoomFrame(view.plan, ease(view.t));
   const camera = zoom?.camera ?? IDENTITY;
-  const zoomedInto =
-    view && !shownGroup
-      ? { id: view.plan.id, headerOpacity: 1 - ramp(view.t, 0.15, 0.5) }
-      : null;
+  const dim = view ? dimAt(view.t) : 1;
+  const zoomedInto = view && !shownGroup ? { id: view.plan.id, headerOpacity: 1 - dim } : null;
   const graphProps = {
     graph,
     selected: shownGroup ? null : shown,
     selectedGroup: shownGroup ? shown : null,
+    dim,
     zoomedInto,
     onSelect: shown ? undefined : onSelect,
   };
@@ -461,7 +466,7 @@ export const Xray = ({
     const final = snapshots.get({ kind: "final", id, camera: at.plan.to });
     const layers: SceneLayer[] = [
       { kind: "start", snapshot: start, opacity: 1 },
-      { kind: "target", snapshot: target, opacity: ramp(at.t, 0.15, 0.5) },
+      { kind: "target", snapshot: target, opacity: dimAt(at.t) },
     ];
     if (final) layers.push({ kind: "final", snapshot: final, opacity: ramp(at.t, 0.55, 0.85) });
     const covering = Math.max(...layers.map((layer, i) => (layer.opacity === 1 ? i : 0)));
