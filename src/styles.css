@@ -331,8 +331,10 @@
 }
 
 /* Fine grain on the interior's background: dithers the edge band's gradient over the dark
-   interior (otherwise it bands into faint rings) and gives the cavity some texture. */
-.xray-interior::before {
+   interior (otherwise it bands into faint rings) and gives the cavity some texture. The 404 page's
+   window too (`.not-found-window`). */
+.xray-interior::before,
+.not-found-window::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -351,4 +353,35 @@
 /* The camera: zooming into a node moves and scales the graph (animated by `Xray`). */
 .xray-camera {
   transform-origin: 0 0;
+}
+
+/* The 404 page, like the home page with the x-ray open: the page is frost (the surface, under the
+   interior's colour at the frost's opacity, `.xray-frost`), and the picture is seen through a
+   window. The window's edge is the x-ray's (`useXrayWindow`): a rounded rectangle blurred over the
+   band (σ = band / 4, half clear on the drawn edge), here an inset shadow of the frost: spread half a
+   band in from the box, blurred over the other half. Its corners as the x-ray's (`xrayWindow`),
+   capped so they stay clear of the picture. On phones, as in the x-ray, its sides run off the
+   screen, so only the top and bottom have frost. */
+.not-found-page {
+  --xray-frost-solid: color-mix(in srgb, oklch(0.13 0.045 292) 55%, oklch(0.06 0.015 292));
+  background-color: var(--xray-frost-solid);
+}
+.not-found-window {
+  --band: 56px;
+  --radius: min(18vmin, 6rem);
+  border-radius: calc(var(--radius) + var(--band) / 2);
+  padding: var(--band) calc(1rem + var(--band) + var(--radius));
+  margin-inline: calc(-1rem - var(--band) - var(--radius));
+}
+@media (width >= 40rem) {
+  .not-found-window {
+    --band: 96px;
+    padding: var(--band);
+    margin-inline: calc(-1 * var(--band));
+    max-width: calc(42rem + 2 * var(--band));
+  }
+}
+.not-found-rim {
+  border-radius: inherit;
+  box-shadow: inset 0 0 calc(var(--band) / 2) calc(var(--band) / 2) var(--xray-frost-solid);
 }

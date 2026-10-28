@@ -1,4 +1,10 @@
-import { useId, useState, type KeyboardEvent, type MouseEvent } from "react";
+import {
+  useId,
+  useState,
+  type KeyboardEvent,
+  type MouseEvent,
+  type ReactNode,
+} from "react";
 
 import {
   edgeId,
@@ -107,6 +113,8 @@ type InfraGraphProps = {
   targets?: string[];
   /** The node the camera is zooming into: its header fades out as the camera passes it (0..1). */
   zoomedInto?: { id: string; headerOpacity: number } | null;
+  /** Drawn over the graph, in the layout's units. */
+  children?: ReactNode;
   className?: string;
 };
 
@@ -126,6 +134,7 @@ export const InfraGraph = ({
   onSelect,
   targets,
   zoomedInto = null,
+  children,
   className,
 }: InfraGraphProps) => {
   const id = useId();
@@ -445,6 +454,8 @@ export const InfraGraph = ({
           );
         })}
       </g>
+
+      {children}
     </svg>
   );
 };
