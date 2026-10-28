@@ -211,7 +211,13 @@
    rectangle, which gradients can't draw, so it's baked into an image of the screen by
    `useXrayWindow`. The window's shape is fixed; only the interior's opacity animates (0 closed, 1
    open), which browsers do cheaply, Firefox too (it redrew an animated mask on every frame). Closed,
-   the look-inside panel shows a picture of the interior instead. */
+   the look-inside panel shows a picture of the interior instead.
+   Each mask stays on its element the whole time, next to a solid layer that's switched on where the
+   mask shouldn't apply (they add up, so the element shows in full). Firefox only decodes a mask
+   image once it's drawn with it, and until then leaves the element out: a mask first used mid-
+   transition made the surface or the interior drop out for a frame (a flash on the first opening
+   after a load, and on the first closing after loading with the x-ray open). Switching a gradient
+   needs no decoding. */
 .xray-interior {
   mask-image: var(--xray-window);
   mask-size: 100% 100%;
@@ -232,11 +238,35 @@
   z-index: 0;
   mask-image: none;
 }
-.xray-surface[data-settled] > .xray-surface-content {
-  mask-image: var(--xray-rim);
-  mask-size: var(--xray-width) var(--xray-height);
-  mask-position: 0 var(--xray-rim-top);
+.xray-surface-content {
+  mask-size:
+    var(--xray-width) var(--xray-height),
+    100% 100%;
+  mask-position:
+    0 var(--xray-rim-top, 0px),
+    0 0;
   mask-repeat: no-repeat;
+  mask-composite: add;
+}
+/* Closed, the rim is drawn (so decoded) with the solid layer over it; while fading, the surface is
+   unmasked (masking it then cost Firefox frames). Settled, the rim alone, intersected with the window
+   added to the solid layer (rim ∩ everything = rim): that draws the window, which the unmasked
+   interior doesn't, so it's decoded for closing (opened on a `?xray` link, it never was). Masking
+   the interior instead cost Firefox frames while zooming. */
+.xray-surface:not([data-open]) > .xray-surface-content {
+  mask-image: var(--xray-rim), linear-gradient(#000 0 0);
+}
+.xray-surface[data-settled] > .xray-surface-content {
+  mask-image: var(--xray-rim), var(--xray-window), linear-gradient(#000 0 0);
+  mask-size:
+    var(--xray-width) var(--xray-height),
+    var(--xray-width) var(--xray-height),
+    100% 100%;
+  mask-position:
+    0 var(--xray-rim-top, 0px),
+    0 var(--xray-rim-top, 0px),
+    0 0;
+  mask-composite: intersect, add;
 }
 
 /* The surface's background (behind the header and the hero): black frosted glass, a blurred, dimmed
@@ -353,6 +383,22 @@
 /* The camera: zooming into a node moves and scales the graph (animated by `Xray`). */
 .xray-camera {
   transform-origin: 0 0;
+}
+
+/* The prerendered page (`scripts/prerender.mjs`), until the app replaces it: laid out as if the
+   wrapper weren't there, and hidden on an `?xray` link (`data-xray-link`, set in `index.html`),
+   where it would show the hero before the app renders the open x-ray. */
+[data-prerendered] {
+  display: contents;
+}
+[data-xray-link] [data-prerendered] {
+  visibility: hidden;
+}
+/* The same link, once the app has rendered: the x-ray starts settled, so it stays hidden until its
+   masks are decoded (`data-masks-ready`, set by `useXrayWindow`), or its first frames show the surface
+   unmasked. Only the home page's layers, so a 404 on such a link isn't held up. */
+[data-xray-link]:not([data-masks-ready]) :is(.xray-surface, .xray-interior) {
+  visibility: hidden;
 }
 
 /* The 404 page, like the home page with the x-ray open: the page is frost (the surface, under the

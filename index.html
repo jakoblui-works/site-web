@@ -36,6 +36,12 @@
     />
     <!-- Without it, Discord and X show a small thumbnail instead of the large card. -->
     <meta name="twitter:card" content="summary_large_image" />
+    <!-- The prerendered page is `/` with the x-ray closed; on an `?xray` link it's hidden until the
+         app renders the open x-ray, so the hero doesn't show first (see `styles.css`). -->
+    <script>
+      if (new URLSearchParams(location.search).has("xray"))
+        document.documentElement.setAttribute("data-xray-link", "");
+    </script>
   </head>
   <body>
     <div id="app"></div>
