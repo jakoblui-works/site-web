@@ -3,10 +3,12 @@ import { graphIds, graphs, graphTitles } from "@/lib/graphs";
 /**
  * The x-ray as text: every view and what it says about each node, for assistive tech and
  * crawlers. The graph only shows a node's details once it's zoomed into; this is always there
- * (and in the prerendered page). Visually hidden, so it uses the x-ray's own wording.
+ * (and in the prerendered page). Visually hidden, so it uses the x-ray's own wording. Its own
+ * landmark after `<main>`, so reading the page gets the hero first. It shares the x-ray's name
+ * ("Infrastructure"), but never at the same time: whichever isn't showing is `inert`.
  */
 export const InfraOutline = ({ inert }: { inert?: boolean }) => (
-  <section aria-labelledby="infra-outline-title" inert={inert} className="sr-only">
+  <aside aria-labelledby="infra-outline-title" inert={inert} className="sr-only">
     <h2 id="infra-outline-title">Infrastructure</h2>
     {graphIds.map((graphId) => {
       const graph = graphs[graphId];
@@ -47,5 +49,5 @@ export const InfraOutline = ({ inert }: { inert?: boolean }) => (
         </section>
       );
     })}
-  </section>
+  </aside>
 );

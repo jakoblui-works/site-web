@@ -92,8 +92,8 @@ const HomeComponent = () => {
                 })
               }
             />
-            <InfraOutline inert={isOpen} />
           </main>
+          <InfraOutline inert={isOpen} />
         </div>
       </div>
       {/* The interior: fixed on top of the surface, seen through the window while open. */}
