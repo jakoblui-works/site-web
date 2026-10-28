@@ -47,12 +47,14 @@ export const deployDetails: Record<string, NodeDetails> = {
     decisions: [
       "Any app repo triggers it with a repository_dispatch, so changes to infra go live with the next deploy.",
       "Environment before code: compose file and .env first, then pull, migrate, and start.",
+      "Each deploy ends by pruning dangling images; GHCR keeps the old versions for rollback.",
     ],
     links: [],
   },
   terraform: {
-    summary: "Provisions the cloud resources: the droplet, a reserved IP and the DNS records.",
-    stack: ["Terraform", "DigitalOcean provider"],
+    summary:
+      "Provisions the cloud resources: the droplet, a reserved IP, the DNS records, the disk alert and the uptime checks.",
+    stack: ["Terraform", "DigitalOcean provider", "Grafana provider"],
     decisions: [
       "Infrastructure as code: Terraform creates the machine and its DNS; Ansible configures and deploys onto it.",
       "Run from my laptop: changes to the infrastructure are rare and deliberate.",
@@ -60,8 +62,9 @@ export const deployDetails: Record<string, NodeDetails> = {
     links: [],
   },
   digitalocean: {
-    summary: "The cloud provider: one droplet in Frankfurt, a reserved IP, and DNS for jakoblui.com.",
-    stack: ["DigitalOcean", "Droplet", "Reserved IP", "DNS"],
+    summary:
+      "The cloud provider: one droplet in Frankfurt, a reserved IP, DNS for jakoblui.com, and an alert when the disk fills up.",
+    stack: ["DigitalOcean", "Droplet", "Reserved IP", "DNS", "Monitoring"],
     decisions: [
       "One small droplet runs everything; the reserved IP keeps DNS pointing at it if it's ever replaced.",
     ],
@@ -70,10 +73,20 @@ export const deployDetails: Record<string, NodeDetails> = {
   droplet: {
     summary:
       "An Ubuntu server running everything in one Docker Compose project: the runtime view shows what's inside.",
-    stack: ["Ubuntu 24.04", "Docker Compose", "ufw"],
+    stack: ["Ubuntu 24.04", "Docker Compose", "ufw", "unattended-upgrades", "do-agent"],
     decisions: [
       "Set up by an Ansible playbook: a deploy user, SSH keys only, and a firewall open to SSH, HTTP and HTTPS.",
       "Migrations run as one-off containers before the services start.",
+      "Security updates install themselves; if one needs a reboot, it happens at 04:00 UTC.",
+      "Container logs are capped at 3 × 10 MB per service.",
+    ],
+    links: [],
+  },
+  grafana: {
+    summary: "Grafana Cloud's synthetic monitoring: the uptime checks and their alert rule.",
+    stack: ["Grafana Cloud", "Synthetic Monitoring"],
+    decisions: [
+      "Checks as code: the URLs, probes and alert rule live in Terraform, not in a dashboard.",
     ],
     links: [],
   },

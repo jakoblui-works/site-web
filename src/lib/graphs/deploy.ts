@@ -14,6 +14,7 @@ const nodes: GraphNode[] = [
   { id: "terraform", label: "Terraform", detail: "provisioning", logos: ["terraform"], kind: "service", inCasing: false },
   { id: "digitalocean", label: "DigitalOcean", detail: "droplet · DNS", logos: ["digitalocean"], kind: "external", inCasing: false },
   { id: "droplet", label: "Droplet", detail: "Docker Compose", logos: ["server"], kind: "service", inCasing: false },
+  { id: "grafana", label: "Grafana Cloud", detail: "uptime checks", logos: ["grafana"], kind: "external", inCasing: false },
 ];
 
 const edges: GraphEdge[] = [
@@ -26,6 +27,7 @@ const edges: GraphEdge[] = [
   { from: "me", to: "terraform" },
   { from: "terraform", to: "digitalocean" },
   { from: "digitalocean", to: "droplet", dashed: true },
+  { from: "terraform", to: "grafana" },
 ];
 
 /**
@@ -46,6 +48,7 @@ const landscapeLayout: GraphLayout = {
     droplet: { x: 960, y: 560 },
     terraform: { x: 340, y: 700 },
     digitalocean: { x: 600, y: 700 },
+    grafana: { x: 340, y: 560 },
   },
   routes: {
     "infra->droplet": { exit: "y", enter: "x" },
@@ -62,6 +65,7 @@ const landscapeLayout: GraphLayout = {
     "me->terraform": { at: 0.3, side: "right" },
     "terraform->digitalocean": { at: 0.5, side: "above", clear: true },
     "digitalocean->droplet": { at: 0.3, side: "below" },
+    "terraform->grafana": { at: 0.5, side: "left" },
   },
 };
 
@@ -71,18 +75,19 @@ const landscapeLayout: GraphLayout = {
  */
 const portraitLayout: GraphLayout = {
   width: 480,
-  height: 890,
+  height: 1030,
   node: { width: 170, height: 58 },
-  casing: { x: 20, y: 240, width: 320, height: 440 },
+  casing: { x: 20, y: 380, width: 320, height: 440 },
   positions: {
-    me: { x: 120, y: 60 },
-    terraform: { x: 380, y: 60 },
-    digitalocean: { x: 380, y: 180 },
-    repos: { x: 120, y: 300 },
-    actions: { x: 120, y: 400 },
-    ghcr: { x: 240, y: 520 },
-    infra: { x: 120, y: 620 },
-    droplet: { x: 260, y: 820 },
+    grafana: { x: 380, y: 60 },
+    me: { x: 120, y: 160 },
+    terraform: { x: 380, y: 160 },
+    digitalocean: { x: 380, y: 320 },
+    repos: { x: 120, y: 440 },
+    actions: { x: 120, y: 540 },
+    ghcr: { x: 240, y: 660 },
+    infra: { x: 120, y: 760 },
+    droplet: { x: 260, y: 960 },
   },
   routes: {
     "actions->ghcr": { exit: "x", enter: "y" },
@@ -97,15 +102,16 @@ const portraitLayout: GraphLayout = {
     "ghcr->droplet": { at: 0.25, side: "right" },
     "actions->infra": { at: 0.5, side: "right" },
     "infra->droplet": { at: 0.4, side: "right" },
-    "me->terraform": { at: 0.5, side: "above", clear: true },
-    "terraform->digitalocean": { at: 0.5, side: "left" },
+    "me->terraform": { at: 0.5, side: "below", dy: 30 },
+    "terraform->digitalocean": { at: 0.7, side: "left" },
     "digitalocean->droplet": { at: 0.4, side: "left" },
+    "terraform->grafana": { at: 0.5, side: "left" },
   },
 };
 
 export const deployGraph: Graph = {
   description:
-    "Build and deploy: I push to the app repos on GitHub, where Actions tests them and builds images to GHCR, then triggers infra's deploy, which runs Ansible on the droplet to pull and start them. Terraform provisions the droplet and DNS at DigitalOcean.",
+    "Build and deploy: I push to the app repos on GitHub, where Actions tests them and builds images to GHCR, then triggers infra's deploy, which runs Ansible on the droplet to pull and start them. Terraform provisions the droplet and DNS at DigitalOcean, and the uptime checks in Grafana Cloud.",
   casingLabel: "GitHub",
   nodes,
   edges,
