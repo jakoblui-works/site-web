@@ -385,9 +385,10 @@
   transform-origin: 0 0;
 }
 
-/* The prerendered page (`scripts/prerender.mjs`), until the app replaces it: laid out as if the
-   wrapper weren't there, and hidden on an `?xray` link (`data-xray-link`, set in `index.html`),
-   where it would show the hero before the app renders the open x-ray. */
+/* The prerendered page (`scripts/prerender.mjs`), hydrated in place on its own URL and replaced
+   anywhere else (`main.tsx`): laid out as if the wrapper weren't there, and hidden on an `?xray`
+   link (`data-xray-link`, set in `index.html`), where it would show the hero before the app
+   renders the open x-ray. Such a link is never hydrated, so the wrapper doesn't stay hidden. */
 [data-prerendered] {
   display: contents;
 }

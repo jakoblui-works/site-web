@@ -197,7 +197,8 @@ export const Xray = ({
   const snapshots = useZoomSnapshots(
     graphId,
     graph,
-    // Prerendering has no screen; the browser renders the page afresh (see `main.tsx`).
+    // Prerendering has no screen. Only the snapshots' hidden copy uses it, which isn't in the first
+    // render, so the hydrated markup is the same at every width (see `main.tsx`).
     typeof window !== "undefined" && window.innerWidth >= WIDE ? landscape : portrait,
     stageRef,
   );
