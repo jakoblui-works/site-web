@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { Hero } from "@/components/hero";
 import { FrostedGraph } from "@/components/frosted-graph";
+import { InfraOutline } from "@/components/infra-outline";
 import { SiteHeader } from "@/components/site-header";
 import { Xray } from "@/components/xray";
 import { useXrayWindow } from "@/hooks/use-xray-window";
@@ -91,6 +92,7 @@ const HomeComponent = () => {
                 })
               }
             />
+            <InfraOutline inert={isOpen} />
           </main>
         </div>
       </div>

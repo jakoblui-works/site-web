@@ -20,7 +20,8 @@ declare module '@tanstack/react-router' {
 
 const rootElement = document.getElementById('app')!
 
-if (!rootElement.innerHTML) {
-  const root = ReactDOM.createRoot(rootElement)
-  root.render(<RouterProvider router={router} />)
-}
+// Built pages hold a prerendered copy of `/` (see `prerender.tsx`), for crawlers. It isn't
+// hydrated: TanStack Router renders a different tree on the server unless it's set up for SSR.
+// `createRoot` replaces it with a fresh render, exactly as on an empty page.
+const root = ReactDOM.createRoot(rootElement)
+root.render(<RouterProvider router={router} />)

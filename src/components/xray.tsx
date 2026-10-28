@@ -197,7 +197,8 @@ export const Xray = ({
   const snapshots = useZoomSnapshots(
     graphId,
     graph,
-    window.innerWidth >= WIDE ? landscape : portrait,
+    // Prerendering has no screen; the browser renders the page afresh (see `main.tsx`).
+    typeof window !== "undefined" && window.innerWidth >= WIDE ? landscape : portrait,
     stageRef,
   );
 
