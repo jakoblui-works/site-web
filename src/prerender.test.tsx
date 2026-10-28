@@ -1,6 +1,6 @@
 // @vitest-environment node
 // The prerender runs in Node (`scripts/prerender.mjs`), so its tests do too.
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 /**
  * Imports `render` as the build runs it. The test setup (jest-dom) puts a partial `CSS` global
@@ -30,6 +30,13 @@ const scripts = (html: string) =>
   [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map(([, body]) => body);
 
 describe("render", () => {
+  // The first import transforms the whole app, which can outlast a test's timeout on a busy CI
+  // runner; done once here, with its own budget, so the tests only time the rendering.
+  let render: Awaited<ReturnType<typeof loadRender>>;
+  beforeAll(async () => {
+    render = await loadRender();
+  }, 30_000);
+
   afterEach(() => {
     vi.doUnmock("@/components/hero");
   });
@@ -40,7 +47,6 @@ describe("render", () => {
     // The not-found page, for what was asked.
     { url: "/404", title: /No route here/, says: "GET /404" },
   ])("renders $url with its text and the router's state", async ({ url, title, says }) => {
-    const render = await loadRender();
     const html = await render(url);
     expect(heading(html)).toMatch(title);
     expect(toText(html)).toContain(says);
@@ -54,7 +60,8 @@ describe("render", () => {
         throw new Error("boom");
       },
     }));
-    const render = await loadRender();
-    await expect(render("/")).rejects.toThrow();
+    // Imported again, with the hero mocked; the app's transforms are cached by now.
+    const failing = await loadRender();
+    await expect(failing("/")).rejects.toThrow();
   });
 });
