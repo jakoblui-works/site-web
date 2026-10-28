@@ -30,11 +30,13 @@ const pages = [
   { url: "/404", file: "404.html", head: notFoundHead },
 ];
 
+// Marked, so it can be hidden where it doesn't match the URL (`[data-prerendered]` in styles.css);
+// the app's render replaces it, marker and all.
 for (const { url, file, head } of pages) {
   const html = await render(url);
   await writeFile(
     path.join(dist, file),
-    head(template).replace(placeholder, `<div id="app">${html}</div>`),
+    head(template).replace(placeholder, `<div id="app"><div data-prerendered>${html}</div></div>`),
   );
 }
 await rm(ssrDir, { recursive: true });

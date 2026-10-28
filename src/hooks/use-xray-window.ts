@@ -1,4 +1,4 @@
-import { useLayoutEffect, type RefObject } from "react";
+import { useLayoutEffect, useRef, type RefObject } from "react";
 
 import { bandFor, bottomFrost, type Box, xrayWindow } from "@/lib/xray-window";
 
@@ -86,6 +86,25 @@ const apply = (style: CSSStyleDeclaration, values: Record<string, number | strin
 };
 
 /**
+ * Marks the page once the first masks are decoded (`data-masks-ready` on the root). Opened on an
+ * `?xray` link, the x-ray starts settled, so its first frames need the rim; until it's decoded,
+ * Firefox drew the surface unmasked (the hero over the graph), so the page stays hidden until then
+ * (see `styles.css`). A mask that fails to decode doesn't hold it up.
+ */
+const markReady = (masks: { window: string; rim: string }) => {
+  const root = document.documentElement;
+  if (root.hasAttribute("data-masks-ready")) return;
+  const decode = (url: string) => {
+    const image = new Image();
+    image.src = url;
+    return image.decode().catch(() => {});
+  };
+  void Promise.all([decode(masks.window), decode(masks.rim)]).then(() =>
+    root.setAttribute("data-masks-ready", ""),
+  );
+};
+
+/**
  * Publishes the x-ray's window (see `styles.css`). On the root: the graph's clear area (see
  * `.xray-content`), the screen's size and the window's masks, drawn around the clear area, the hero
  * (`data-xray-cover`), the header and its items (`data-xray-solid`), all inside the surface. While `settled`, the rim's offset
@@ -93,10 +112,13 @@ const apply = (style: CSSStyleDeclaration, values: Record<string, number | strin
  * the screen's size and the hero's.
  */
 export const useXrayWindow = (surfaceRef: RefObject<HTMLElement | null>, settled: boolean) => {
+  // The shape the masks were last drawn for. Kept across the effect's runs: settling re-runs it, and
+  // setting the masks again then made Firefox load them again, so on the first opening after a load
+  // the surface dropped out while they loaded (a bright flash).
+  const drawn = useRef("");
   useLayoutEffect(() => {
     const surface = surfaceRef.current;
     const hero = surface?.querySelector("[data-xray-cover]");
-    let drawn = "";
     const place = () => {
       const vw = window.innerWidth;
       const vh = window.innerHeight;
@@ -124,11 +146,12 @@ export const useXrayWindow = (surfaceRef: RefObject<HTMLElement | null>, settled
       });
       // Redrawn only when the shape changes, so the interior isn't masked again for nothing.
       const key = JSON.stringify([vw, vh, shape]);
-      if (key !== drawn) {
+      if (key !== drawn.current) {
         const masks = drawMasks(vw, vh, shape);
         if (masks) {
           apply(root, { window: `url("${masks.window}")`, rim: `url("${masks.rim}")` });
-          drawn = key;
+          drawn.current = key;
+          markReady(masks);
         }
       }
       if (!settled) return;
@@ -136,9 +159,12 @@ export const useXrayWindow = (surfaceRef: RefObject<HTMLElement | null>, settled
     };
     place();
     window.addEventListener("resize", place);
-    // The hero changes size with the screen, and once the fonts have loaded.
+    // The hero changes size with the screen, and once the fonts have loaded; so do the header's
+    // items (the logo's width), which the hero's size doesn't show. Unwatched, the shape went stale
+    // until the first settle, whose new masks Firefox then loaded mid-animation (a flash).
     const observer = new ResizeObserver(place);
     if (hero) observer.observe(hero);
+    surface?.querySelectorAll("[data-xray-solid]").forEach((item) => observer.observe(item));
     return () => {
       window.removeEventListener("resize", place);
       observer.disconnect();
