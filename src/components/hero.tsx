@@ -17,7 +17,7 @@ type HeroProps = {
 };
 
 /** Lucide's arrow-right with a longer tail, so it holds its own next to bold text. */
-const TailArrow = ({ className }: { className?: string }) => (
+export const TailArrow = ({ className }: { className?: string }) => (
   <svg
     aria-hidden
     viewBox="0 0 28 24"
