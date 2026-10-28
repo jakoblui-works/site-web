@@ -277,8 +277,13 @@ export const InfraGraph = ({
           </g>
         ))}
         <text
-          x={casing.x + SCREW_INSET + 16}
+          x={
+            layout.casingLabelSide === "right"
+              ? casing.x + casing.width - SCREW_INSET - 16
+              : casing.x + SCREW_INSET + 16
+          }
           y={casing.y + SCREW_INSET + 4}
+          textAnchor={layout.casingLabelSide === "right" ? "end" : "start"}
           className="fill-violet-200/60 font-mono text-[13px]"
         >
           {graph.casingLabel}

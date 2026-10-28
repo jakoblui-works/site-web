@@ -1,10 +1,13 @@
+import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
 import { graphs } from "./graphs";
 import {
   edgeId,
   edgeRoute,
+  GRID,
   segmentHitsRect,
+  type GraphEdge,
   type GraphLayout,
   type Rect,
 } from "./infra-graph";
@@ -98,6 +101,18 @@ describe.each(Object.entries(graphs))("%s graph", (_, { nodes, edges, layouts })
       }
     });
 
+    it("spread only names traces into that node", () => {
+      const ids = new Set(nodes.map((node) => node.id));
+      for (const [target, listed] of Object.entries(layout.spread ?? {})) {
+        expect(ids, `spread key ${target}`).toContain(target);
+        const into = edges.filter((edge) => edge.to === target).map(edgeId);
+        for (const id of listed) {
+          expect(into, `spread ${target}: ${id}`).toContain(id);
+        }
+        expect(new Set(listed).size, `spread ${target} has duplicates`).toBe(listed.length);
+      }
+    });
+
     it("routes every edge like a board trace: straight or at 45°", () => {
       for (const edge of edges) {
         const route = edgeRoute(layout, edge);
@@ -111,5 +126,74 @@ describe.each(Object.entries(graphs))("%s graph", (_, { nodes, edges, layouts })
         }
       }
     });
+  });
+});
+
+describe("spread entries", () => {
+  type Side = "top" | "bottom" | "left" | "right";
+  const target = { x: 2000, y: 2000 };
+  // Grid steps from the target: `lead` along the axis it's entered on (always on that side), `lateral`
+  // across it (anywhere).
+  const source = fc.record({
+    lead: fc.integer({ min: 1, max: 40 }),
+    lateral: fc.integer({ min: -40, max: 40 }),
+  });
+  const setup = fc.record({
+    side: fc.constantFrom<Side>("top", "bottom", "left", "right"),
+    node: fc.record({
+      width: fc.integer({ min: 6, max: 12 }).map((n) => n * GRID - 10),
+      height: fc.integer({ min: 2, max: 5 }).map((n) => n * GRID),
+    }),
+    sources: fc.array(source, { minLength: 2, maxLength: 4 }),
+  });
+
+  it("shares a side out evenly, in the listed order, with board traces", () => {
+    fc.assert(
+      fc.property(setup, ({ side, node, sources }) => {
+        const enter = side === "top" || side === "bottom" ? "y" : "x";
+        const sign = side === "top" || side === "left" ? -1 : 1;
+        const positions: GraphLayout["positions"] = { target };
+        const edges: GraphEdge[] = sources.map(({ lead, lateral }, i) => {
+          const id = `s${i}`;
+          const along = target[enter === "x" ? "x" : "y"] + sign * lead * GRID;
+          const across = target[enter === "x" ? "y" : "x"] + lateral * GRID;
+          positions[id] = enter === "x" ? { x: along, y: across } : { x: across, y: along };
+          return { from: id, to: "target" };
+        });
+        const layout: GraphLayout = {
+          width: 4000,
+          height: 4000,
+          node,
+          casing: { x: 0, y: 0, width: 4000, height: 4000 },
+          positions,
+          routes: Object.fromEntries(edges.map((edge) => [edgeId(edge), { enter }])),
+          spread: { target: edges.map(edgeId) },
+        };
+        const n = edges.length;
+        const left = target.x - node.width / 2;
+        const top = target.y - node.height / 2;
+
+        for (const [k, edge] of edges.entries()) {
+          const route = edgeRoute(layout, edge);
+          const end = route[route.length - 1];
+          const share = (k + 1) / (n + 1);
+          const expected =
+            side === "top" || side === "bottom"
+              ? { x: left + node.width * share, y: target.y + (sign * node.height) / 2 }
+              : { x: target.x + (sign * node.width) / 2, y: top + node.height * share };
+          expect(end.x, `${edgeId(edge)} end x`).toBeCloseTo(expected.x, 6);
+          expect(end.y, `${edgeId(edge)} end y`).toBeCloseTo(expected.y, 6);
+
+          for (const [i, point] of route.slice(1).entries()) {
+            const dx = Math.abs(point.x - route[i].x);
+            const dy = Math.abs(point.y - route[i].y);
+            expect(
+              dx < 1e-9 || dy < 1e-9 || Math.abs(dx - dy) < 1e-9,
+              `${edgeId(edge)} segment ${i}`,
+            ).toBe(true);
+          }
+        }
+      }),
+    );
   });
 });

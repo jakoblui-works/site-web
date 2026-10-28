@@ -1,4 +1,5 @@
 import {
+  ActivityIcon,
   HardDriveIcon,
   LaptopIcon,
   MonitorIcon,
@@ -12,6 +13,7 @@ import {
   siFastapi,
   siGithub,
   siGithubactions,
+  siGrafana,
   siLatex,
   siOpenapiinitiative,
   siPostgresql,
@@ -28,8 +30,8 @@ import {
 
 import { type LogoId } from "@/lib/infra-graph";
 
-// Brand marks come from Simple Icons (24×24 paths). Garage, "a browser", a laptop and a server have
-// none, so they use lucide icons.
+// Brand marks come from Simple Icons (24×24 paths). Garage, "a browser", a laptop, a server and a
+// metrics agent have none, so they use lucide icons.
 type Logo = { title: string } & ({ path: string } | { Icon: LucideIcon });
 
 const brand = ({ title, path }: SimpleIcon): Logo => ({ title, path });
@@ -56,6 +58,8 @@ const logos: Record<LogoId, Logo> = {
   ansible: brand(siAnsible),
   terraform: brand(siTerraform),
   server: { title: "Server", Icon: ServerIcon },
+  grafana: brand(siGrafana),
+  metrics: { title: "Metrics", Icon: ActivityIcon },
 };
 
 type InfraLogoProps = {

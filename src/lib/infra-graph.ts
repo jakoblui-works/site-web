@@ -30,7 +30,9 @@ export type LogoId =
   | "docker"
   | "ansible"
   | "terraform"
-  | "server";
+  | "server"
+  | "grafana"
+  | "metrics";
 
 export type GraphNode = {
   id: string;
@@ -96,6 +98,14 @@ export type GraphLayout = {
   positions: Record<string, Point>;
   /** Per-edge routing, keyed by `edgeId`. */
   routes?: Record<string, RouteOptions>;
+  /**
+   * Traces that enter the same side of a node, keyed by that node's id, by `edgeId` in order along
+   * the side (left to right, or top to bottom): they share it out evenly instead of meeting at its
+   * middle.
+   */
+  spread?: Record<string, string[]>;
+  /** Which top corner of the casing its label sits in (default: left). */
+  casingLabelSide?: "left" | "right";
   /** Where each trace's label sits when its group is zoomed into, keyed by `edgeId`. */
   labels?: Record<string, LabelSpot>;
 };
@@ -131,7 +141,7 @@ export type TraceGroup = {
 export type Graph = {
   /** What it shows, for assistive tech. */
   description: string;
-  /** Printed on the casing, next to its top-left screw. */
+  /** Printed on the casing, next to a top screw (see `casingLabelSide`). */
   casingLabel: string;
   nodes: GraphNode[];
   edges: GraphEdge[];
@@ -205,10 +215,15 @@ export const edgeRoute = (layout: GraphLayout, edge: GraphEdge): Point[] => {
     exit === "x"
       ? { x: a.x + (sx * width) / 2, y: a.y }
       : { x: a.x, y: a.y + (sy * height) / 2 };
+  // Where it meets the target's side: the middle, or its share of a spread side.
+  const sharing = layout.spread?.[edge.to] ?? [];
+  const slot = sharing.indexOf(edgeId(edge));
+  const offset = (side: number) =>
+    slot === -1 ? 0 : -side / 2 + (side * (slot + 1)) / (sharing.length + 1);
   const end =
     enter === "x"
-      ? { x: b.x - (sx * width) / 2, y: b.y }
-      : { x: b.x, y: b.y - (sy * height) / 2 };
+      ? { x: b.x - (sx * width) / 2, y: b.y + offset(height) }
+      : { x: b.x + offset(width), y: b.y - (sy * height) / 2 };
 
   const dx = end.x - start.x;
   const dy = end.y - start.y;

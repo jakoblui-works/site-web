@@ -36,12 +36,13 @@ export const deployTraceGroups: TraceGroup[] = [
   {
     id: "provisioning",
     title: "Provisioning",
-    path: "Me → Terraform → DigitalOcean → droplet",
-    edges: ["me->terraform", "terraform->digitalocean", "digitalocean->droplet"],
+    path: "Me → Terraform → DigitalOcean → droplet, Grafana Cloud",
+    edges: ["me->terraform", "terraform->digitalocean", "digitalocean->droplet", "terraform->grafana"],
     labels: {
       "me->terraform": ["terraform apply", "by hand, rarely"],
-      "terraform->digitalocean": ["DigitalOcean API", "droplet, IP, DNS records"],
+      "terraform->digitalocean": ["DigitalOcean API", "droplet, IP, DNS, disk alert"],
       "digitalocean->droplet": ["provisions", "Ubuntu 24.04 in fra1"],
+      "terraform->grafana": ["uptime checks", "and their alert rule"],
     },
   },
 ];

@@ -18,6 +18,9 @@ const nodes: GraphNode[] = [
   { id: "postgres", label: "Postgres", detail: "18", logos: ["postgres"], kind: "store", inCasing: true },
   { id: "garage", label: "Garage", detail: "S3", logos: ["storage"], kind: "store", inCasing: true },
   { id: "sentry", label: "Sentry", detail: "errors", logos: ["sentry"], kind: "external", inCasing: false },
+  { id: "grafana", label: "Grafana Cloud", detail: "uptime checks", logos: ["grafana"], kind: "external", inCasing: false },
+  { id: "do-agent", label: "do-agent", detail: "host metrics", logos: ["metrics"], kind: "service", inCasing: true },
+  { id: "do-monitoring", label: "Monitoring", detail: "disk alert", logos: ["digitalocean"], kind: "external", inCasing: false },
 ];
 
 const edges: GraphEdge[] = [
@@ -34,6 +37,8 @@ const edges: GraphEdge[] = [
   { from: "cv-worker", to: "postgres" },
   { from: "cv-worker", to: "garage" },
   { from: "api", to: "sentry", dashed: true },
+  { from: "grafana", to: "traefik" },
+  { from: "do-agent", to: "do-monitoring", dashed: true },
 ];
 
 /**
@@ -47,7 +52,7 @@ const landscapeLayout: GraphLayout = {
   casing: { x: 200, y: 40, width: 900, height: 620 },
   positions: {
     browser: { x: 100, y: 340 },
-    dns: { x: 100, y: 140 },
+    dns: { x: 100, y: 480 },
     traefik: { x: 360, y: 340 },
     "site-web": { x: 580, y: 140 },
     "cv-web": { x: 780, y: 140 },
@@ -58,8 +63,12 @@ const landscapeLayout: GraphLayout = {
     postgres: { x: 680, y: 600 },
     garage: { x: 880, y: 600 },
     sentry: { x: 420, y: 720 },
+    grafana: { x: 100, y: 140 },
+    "do-agent": { x: 360, y: 600 },
+    "do-monitoring": { x: 100, y: 600 },
   },
   routes: {
+    "grafana->traefik": { exit: "x", enter: "y" },
     "traefik->site-web": { exit: "x", enter: "y" },
     "traefik->cv-web": { exit: "x", enter: "y" },
     "traefik->storybook": { exit: "x", enter: "y" },
@@ -83,39 +92,49 @@ const landscapeLayout: GraphLayout = {
     "api->garage": { at: 0.45, side: "above" },
     "cv-worker->postgres": { at: 0.8, side: "above" },
     "cv-worker->garage": { at: 0.6, side: "right", clear: true },
-    "api->sentry": { at: 0.35, side: "left" },
+    "api->sentry": { at: 0.62, side: "right" },
+    "grafana->traefik": { at: 0.75, side: "right" },
+    "do-agent->do-monitoring": { at: 0.5, side: "below", clear: true },
   },
 };
 
 /** Phones: requests flow top to bottom. */
 const portraitLayout: GraphLayout = {
   width: 480,
-  height: 1000,
+  height: 1260,
   node: { width: 170, height: 58 },
-  casing: { x: 20, y: 140, width: 440, height: 740 },
+  casing: { x: 20, y: 240, width: 440, height: 820 },
+  // Top-left, the traces into Traefik would run through it.
+  casingLabelSide: "right",
   positions: {
-    browser: { x: 300, y: 60 },
-    dns: { x: 100, y: 60 },
-    traefik: { x: 120, y: 200 },
-    "site-web": { x: 360, y: 200 },
-    "cv-web": { x: 360, y: 300 },
-    storybook: { x: 360, y: 400 },
-    api: { x: 120, y: 400 },
-    redis: { x: 360, y: 540 },
-    "cv-worker": { x: 360, y: 640 },
-    postgres: { x: 120, y: 800 },
-    garage: { x: 340, y: 800 },
-    sentry: { x: 240, y: 940 },
+    browser: { x: 120, y: 60 },
+    dns: { x: 360, y: 60 },
+    grafana: { x: 360, y: 160 },
+    traefik: { x: 120, y: 300 },
+    "site-web": { x: 360, y: 300 },
+    "cv-web": { x: 360, y: 400 },
+    storybook: { x: 360, y: 500 },
+    api: { x: 120, y: 500 },
+    redis: { x: 360, y: 640 },
+    "cv-worker": { x: 360, y: 740 },
+    postgres: { x: 120, y: 900 },
+    garage: { x: 340, y: 900 },
+    "do-agent": { x: 360, y: 1000 },
+    sentry: { x: 240, y: 1120 },
+    "do-monitoring": { x: 360, y: 1200 },
   },
   routes: {
     "browser->traefik": { exit: "y", enter: "y" },
+    "grafana->traefik": { exit: "x", enter: "y" },
     "api->garage": { bend: 1 },
     "api->sentry": { bend: 0 },
   },
+  spread: { traefik: ["browser->traefik", "grafana->traefik"] },
   // Narrow: one short line per label, framed closer (cropped at the sides), where there's room.
   labels: {
     "browser->dns": { at: 0.5, side: "above", clear: true },
-    "browser->traefik": { at: 0.5, side: "above" },
+    "browser->traefik": { at: 0.25, side: "right" },
+    "grafana->traefik": { at: 0.7, side: "right" },
     "traefik->site-web": { at: 0.5, side: "above", clear: true },
     "traefik->cv-web": { at: 0.5, side: "right" },
     "traefik->storybook": { at: 0.7, side: "right" },
@@ -127,12 +146,13 @@ const portraitLayout: GraphLayout = {
     "cv-worker->postgres": { at: 0.5, side: "left" },
     "cv-worker->garage": { at: 1, side: "below", dy: 60 },
     "api->sentry": { at: 0.5, side: "left" },
+    "do-agent->do-monitoring": { at: 0.5, side: "right" },
   },
 };
 
 export const runtimeGraph: Graph = {
   description:
-    "Infrastructure: a browser reaches Traefik on a DigitalOcean droplet, which routes to the frontends and the api; the api queues CV jobs on Redis for the cv-worker, and both use Postgres and Garage.",
+    "Infrastructure: a browser reaches Traefik on a DigitalOcean droplet, which routes to the frontends and the api; the api queues CV jobs on Redis for the cv-worker, and both use Postgres and Garage. Grafana Cloud checks the public URLs from outside, and DigitalOcean's agent reports the droplet's disk.",
   casingLabel: "DigitalOcean droplet · fra1",
   nodes,
   edges,

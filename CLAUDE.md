@@ -4,7 +4,7 @@ The main site at jakoblui.com: one page that presents me as a product engineer. 
 - **Surface:** the header and the hero (role, name, links, "Tailor my CV").
 - **Interior:** an "x-ray", an interactive graph of the platform's real infrastructure, seen through a window in the page. You can zoom into a node or a group of traces, and switch between the runtime and the build & deploy view.
 
-Dark-only, violet brand. The design history and decisions are in `platform-docs` (roadmap "Current: site-web", architecture "site-web …").
+Dark-only, violet brand. The design history and decisions are in `platform-docs` (`work/site-web.md`, architecture "site-web …").
 
 ## Commands
 ```sh

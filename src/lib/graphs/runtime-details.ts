@@ -111,4 +111,31 @@ export const runtimeDetails: Record<string, NodeDetails> = {
     decisions: ["Only the api reports to it so far; the worker needs network egress first."],
     links: [],
   },
+  grafana: {
+    summary:
+      "Uptime checks from outside: every 5 minutes, probes in Frankfurt and London request the site, the CV app, the api's readiness check and the Storybook.",
+    stack: ["Grafana Cloud", "Synthetic Monitoring", "Terraform"],
+    decisions: [
+      "An email after 4 failed checks in 30 minutes, across both probes: a reboot stays quiet, an outage doesn't.",
+      "Grafana Cloud rather than a plain pinger: it has room for the metrics and logs to come.",
+    ],
+    links: [],
+  },
+  "do-agent": {
+    summary:
+      "DigitalOcean's metrics agent. It runs on the host, not in a container, and reports CPU, memory and disk.",
+    stack: ["do-agent", "Ansible"],
+    decisions: [
+      "Installed by Ansible: turning monitoring on in Terraform would have replaced the droplet.",
+    ],
+    links: [],
+  },
+  "do-monitoring": {
+    summary: "DigitalOcean's monitoring: it emails me when the disk stays over 50% for 5 minutes.",
+    stack: ["DigitalOcean Monitoring", "Terraform"],
+    decisions: [
+      "The safety net for pruning: each deploy cleans up old images, and the alert catches whatever still grows.",
+    ],
+    links: [],
+  },
 };

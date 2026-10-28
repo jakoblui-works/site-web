@@ -48,12 +48,14 @@ export const runtimeTraceGroups: TraceGroup[] = [
     },
   },
   {
-    id: "errors",
-    title: "Error reporting",
-    path: "api → Sentry",
-    edges: ["api->sentry"],
+    id: "monitoring",
+    title: "Monitoring",
+    path: "api → Sentry, Grafana Cloud → Traefik, do-agent → Monitoring",
+    edges: ["api->sentry", "grafana->traefik", "do-agent->do-monitoring"],
     labels: {
       "api->sentry": ["unhandled errors", "the worker doesn't report yet"],
+      "grafana->traefik": ["4 URLs every 5 min", "probes in Frankfurt and London"],
+      "do-agent->do-monitoring": ["disk usage", "emails me past 50%"],
     },
   },
 ];
