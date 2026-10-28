@@ -30,13 +30,16 @@ const pages = [
   { url: "/404", file: "404.html", head: notFoundHead },
 ];
 
-// Marked, so it can be hidden where it doesn't match the URL (`[data-prerendered]` in styles.css);
-// the app's render replaces it, marker and all.
+// Marked with its URL: the app hydrates it there and replaces it anywhere else (`main.tsx`), and
+// it's hidden on `?xray` links until then (`[data-prerendered]` in styles.css).
 for (const { url, file, head } of pages) {
   const html = await render(url);
   await writeFile(
     path.join(dist, file),
-    head(template).replace(placeholder, `<div id="app"><div data-prerendered>${html}</div></div>`),
+    head(template).replace(
+      placeholder,
+      `<div id="app"><div data-prerendered="${url}">${html}</div></div>`,
+    ),
   );
 }
 await rm(ssrDir, { recursive: true });

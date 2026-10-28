@@ -1,27 +1,43 @@
-import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { RouterProvider, createRouter } from '@tanstack/react-router'
-import { routeTree } from './routeTree.gen'
+import { RouterProvider, deepEqual } from '@tanstack/react-router'
+import { RouterClient } from '@tanstack/react-router/ssr/client'
+import { createRouter } from './router'
 import './styles.css'
 
-// Set up a Router instance
-const router = createRouter({
-  routeTree,
-  defaultPreload: 'intent',
-  scrollRestoration: true,
-})
+const router = createRouter()
 
-// Register things for typesafety
-declare module '@tanstack/react-router' {
-  interface Register {
-    router: typeof router
-  }
+/**
+ * The search params a URL's routes read: only what their schemas validate (`_strictSearch`; a
+ * match's `search` also passes on every other param), so ones the app doesn't use (`?fbclid`,
+ * `?utm_source`) drop out. `null` if they don't validate, or the router no longer says.
+ */
+const searchFor = ({ pathname, search }: { pathname: string; search: string }) => {
+  const match = router.matchRoutes(pathname, router.options.parseSearch(search)).at(-1)
+  if (!match || match.searchError) return null
+  return typeof match._strictSearch === 'object' ? match._strictSearch : null
 }
 
-const rootElement = document.getElementById('app')!
+/** Whether this URL renders the same page as `url`: the same path and the same search params. */
+const rendersAs = (url: URL) => {
+  if (url.pathname !== location.pathname) return false
+  const search = searchFor(url)
+  return search !== null && deepEqual(search, searchFor(location))
+}
 
-// Built pages hold a prerendered copy of `/` (see `prerender.tsx`), for crawlers. It isn't
-// hydrated: TanStack Router renders a different tree on the server unless it's set up for SSR.
-// `createRoot` replaces it with a fresh render, exactly as on an empty page.
-const root = ReactDOM.createRoot(rootElement)
-root.render(<RouterProvider router={router} />)
+// Built pages hold a prerendered page (see `prerender.tsx`), marked with the URL it was rendered
+// for. On a URL that renders the same it's hydrated, so it isn't drawn again. On any other (a
+// made-up path served the 404 page, `?view=deploy`) it would differ from what the app renders, so
+// it's replaced with a fresh render, as is the empty page in dev. So is an `?xray` link on any
+// page: the prerendered page stays hidden there until it's replaced (`data-xray-link`, styles.css).
+const prerendered = document.querySelector<HTMLElement>('[data-prerendered]')
+if (
+  prerendered?.dataset.prerendered &&
+  !document.documentElement.hasAttribute('data-xray-link') &&
+  rendersAs(new URL(prerendered.dataset.prerendered, location.origin))
+) {
+  ReactDOM.hydrateRoot(prerendered, <RouterClient router={router} />)
+} else {
+  ReactDOM.createRoot(document.getElementById('app')!).render(
+    <RouterProvider router={router} />,
+  )
+}

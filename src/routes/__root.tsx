@@ -1,11 +1,19 @@
-import { Outlet, createRootRoute, useLocation } from "@tanstack/react-router";
+import { Outlet, Scripts, createRootRoute, useLocation } from "@tanstack/react-router";
 
 import { NotFound } from "@/components/not-found";
 import { SiteHeader } from "@/components/site-header";
 
 // The header is rendered by the page: on the home page it's part of the x-ray's surface.
+// `Scripts` writes the router's state into prerendered pages, for hydrating them (see `main.tsx`).
+// The scripts remove themselves once run, and it renders nothing in the browser, so the markup
+// still matches.
 const RootComponent = () => {
-  return <Outlet />;
+  return (
+    <>
+      <Outlet />
+      <Scripts />
+    </>
+  );
 };
 
 // Any URL without a route. Built into `404.html` too (see `prerender.tsx`), which nginx serves
