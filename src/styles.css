@@ -2,8 +2,6 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@jakoblui-works/shared-ui/theme.css";
-@import "@fontsource-variable/space-grotesk";
-@import "@fontsource-variable/jetbrains-mono";
 
 /* Brand colour: change the palette name here (violet → purple, …) to rebrand. The site is dark-only, so 400 is the one in use (see --primary in .dark). */
 @theme {
@@ -18,12 +16,6 @@
   --color-primary-800: var(--color-violet-800);
   --color-primary-900: var(--color-violet-900);
   --color-primary-950: var(--color-violet-950);
-}
-
-/* site-web's own fonts: headings over the shared theme's Inter, mono over Tailwind's default. */
-@theme inline {
-  --font-heading: "Space Grotesk Variable", sans-serif;
-  --font-mono: "JetBrains Mono Variable", monospace;
 }
 
 /* X-ray: the interior is fixed on top of the page (the surface: header and hero) and seen through a
