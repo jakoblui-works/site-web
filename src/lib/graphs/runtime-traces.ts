@@ -21,7 +21,7 @@ export const runtimeTraceGroups: TraceGroup[] = [
     labels: {
       "traefik->site-web": ["jakoblui.com", "static files, nginx"],
       "traefik->cv-web": ["cv.jakoblui.com", "a frontend per project"],
-      "traefik->storybook": ["Storybook subdomain", "both frontends' stories"],
+      "traefik->storybook": ["Storybook subdomain", "every library's stories"],
       "traefik->api": ["/api routes", "rate-limited here, at the edge"],
     },
   },

@@ -9,7 +9,7 @@ export const deployTraceGroups: TraceGroup[] = [
     path: "Me → app repos → CI",
     edges: ["me->repos", "repos->actions"],
     labels: {
-      "me->repos": ["git push", "a push to main is a deploy"],
+      "me->repos": ["git push", "pushing main deploys an app"],
       "repos->actions": ["runs CI", "lint, tests, build"],
     },
   },
@@ -29,7 +29,7 @@ export const deployTraceGroups: TraceGroup[] = [
     path: "CI → infra → droplet",
     edges: ["actions->infra", "infra->droplet"],
     labels: {
-      "actions->infra": ["dispatch", "every repo deploys the same way"],
+      "actions->infra": ["dispatch", "every repo dispatches the same way"],
       "infra->droplet": ["Ansible over SSH", "environment first, then code"],
     },
   },
