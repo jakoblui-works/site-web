@@ -169,18 +169,15 @@ importers:
       '@base-ui/react':
         specifier: ^1.8.0
         version: 1.8.0(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      '@fontsource-variable/inter':
-        specifier: ^5.3.0
-        version: 5.3.0
       '@fontsource-variable/jetbrains-mono':
-        specifier: ^5.3.0
-        version: 5.3.0
-      '@fontsource-variable/sora':
         specifier: ^5.3.0
         version: 5.3.0
       '@fontsource-variable/space-grotesk':
         specifier: ^5.3.0
         version: 5.3.0
+      '@jakoblui-works/shared-ui':
+        specifier: ^0.1.1
+        version: 0.1.1(@base-ui/react@1.8.0(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(tailwindcss@4.3.3)
       '@tailwindcss/vite':
         specifier: ^4.2.2
         version: 4.3.3(vite@8.3.0(esbuild@0.28.2)(jiti@2.7.0))
@@ -824,6 +821,15 @@ packages:
   '@humanwhocodes/retry@0.4.3':
     resolution: {integrity: sha512-bV0Tgo9K4hfPCek+aMAn81RppFKv2ySDQeMoSZuvTASywNTnVJCArCZE2FWqpvIatKu7VMRLWlR1EazvVhDyhQ==}
     engines: {node: '>=18.18'}
+
+  '@jakoblui-works/shared-ui@0.1.1':
+    resolution: {integrity: sha512-+FM5qhTn7o5YaUipyH0dvoDlzDmbGVozxaiaBnz4qr3Dh9DqAwaKpkMBpMJ6MAMSaxVs9R8QLZg2YhB0Ja207w==, tarball: https://npm.pkg.github.com/download/@jakoblui-works/shared-ui/0.1.1/f72d28f75b469854266cb9a1dbd03f37334b2829}
+    peerDependencies:
+      '@base-ui/react': ^1.8.0
+      '@types/react': ^19.0.0
+      react: ^19.0.0
+      react-dom: ^19.0.0
+      tailwindcss: ^4.1.0
 
   '@joshwooding/vite-plugin-react-docgen-typescript@0.7.0':
     resolution: {integrity: sha512-qvsTEwEFefhdirGOPnu9Wp6ChfIwy2dBCRuETU3uE+4cC+PFoxMSiiEhxk4lOluA34eARHA0OxqsEUYDqRMgeQ==}
@@ -2124,6 +2130,11 @@ packages:
   cn@0.3.0:
     resolution: {integrity: sha512-qRoU0ARrZD3Bbj1wKFftEKxPjSnzTEdFkf22NVhW+zU9D/wajhoP+qUZ5DChhhSOBCH1onV12hrmGqfu1+5Z2Q==}
     engines: {node: '>=20'}
+    hasBin: true
+
+  cn@0.5.0:
+    resolution: {integrity: sha512-JGEixZEpfFXm1P5uXwvEobOFLlHwIWi5v4tjd1ZwfiYmcEilkuD2l+054rvJcYCR1B+uVThHeUbgmNz1FwuxuA==}
+    engines: {node: '>=22'}
     hasBin: true
 
   code-block-writer@13.0.3:
@@ -4853,6 +4864,17 @@ snapshots:
 
   '@humanwhocodes/retry@0.4.3': {}
 
+  '@jakoblui-works/shared-ui@0.1.1(@base-ui/react@1.8.0(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(tailwindcss@4.3.3)':
+    dependencies:
+      '@base-ui/react': 1.8.0(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@fontsource-variable/inter': 5.3.0
+      '@fontsource-variable/sora': 5.3.0
+      '@types/react': 19.3.0
+      cn: 0.5.0
+      react: 19.3.0
+      react-dom: 19.3.0(react@19.3.0)
+      tailwindcss: 4.3.3
+
   '@joshwooding/vite-plugin-react-docgen-typescript@0.7.0(@typescript/typescript6@6.0.2)(vite@8.3.0(esbuild@0.28.2)(jiti@2.7.0))':
     dependencies:
       glob: 13.0.6
@@ -6017,6 +6039,8 @@ snapshots:
   cn@0.2.6: {}
 
   cn@0.3.0: {}
+
+  cn@0.5.0: {}
 
   code-block-writer@13.0.3: {}
 

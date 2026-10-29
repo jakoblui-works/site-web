@@ -1,7 +1,7 @@
 import { Outlet, Scripts, createRootRoute, useLocation } from "@tanstack/react-router";
 
 import { NotFound } from "@/components/not-found";
-import { SiteHeader } from "@/components/site-header";
+import { HubHeader } from "@/components/hub-header";
 
 // The header is rendered by the page: on the home page it's part of the x-ray's surface.
 // `Scripts` writes the router's state into prerendered pages, for hydrating them (see `main.tsx`).
@@ -24,7 +24,7 @@ const NotFoundPage = () => {
   // sides on phones.
   return (
     <div className="not-found-page min-h-dvh overflow-x-clip">
-      <SiteHeader />
+      <HubHeader />
       <main>
         <NotFound path={path} />
       </main>
