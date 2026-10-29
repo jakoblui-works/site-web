@@ -7,7 +7,7 @@ import { deployTraceGroups } from "./deploy-traces";
 
 const nodes: GraphNode[] = [
   { id: "me", label: "Me", detail: "laptop", logos: ["laptop"], kind: "client", inCasing: false },
-  { id: "repos", label: "App repos", detail: "5 public repos", logos: ["github"], kind: "store", inCasing: true },
+  { id: "repos", label: "App repos", detail: "6 public repos", logos: ["github"], kind: "store", inCasing: true },
   { id: "actions", label: "CI", detail: "GitHub Actions", logos: ["githubactions"], kind: "edge", inCasing: true },
   { id: "ghcr", label: "GHCR", detail: "images", logos: ["docker"], kind: "store", inCasing: true },
   { id: "infra", label: "infra", detail: "Ansible deploy", logos: ["githubactions", "ansible"], kind: "service", inCasing: true },

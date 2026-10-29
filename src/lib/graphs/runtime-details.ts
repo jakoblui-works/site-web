@@ -56,10 +56,10 @@ export const runtimeDetails: Record<string, NodeDetails> = {
     links: [repo("cv-web"), { label: "Live", url: "https://cv.jakoblui.com" }, storybook],
   },
   storybook: {
-    summary: "One Storybook that composes the component libraries of site-web and cv-web.",
+    summary: "One Storybook that composes the component libraries of site-web, cv-web and shared-ui.",
     stack: ["Storybook 10", "nginx"],
     decisions: [
-      "Each frontend builds its own Storybook image on deploy; storybook-host composes them.",
+      "Each frontend builds its own Storybook image on deploy, and shared-ui on each version tag; storybook-host composes them.",
     ],
     links: [repo("storybook-host"), storybook],
   },

@@ -7,6 +7,9 @@ on:
 jobs:
   test:
     uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+      packages: read
   build:
     needs: test
     runs-on: ubuntu-latest
@@ -22,8 +25,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build and push
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          docker build -t ghcr.io/jakoblui-works/site-web:${{ github.sha }} -t ghcr.io/jakoblui-works/site-web:latest .
+          docker build --secret id=npm_token,env=NODE_AUTH_TOKEN -t ghcr.io/jakoblui-works/site-web:${{ github.sha }} -t ghcr.io/jakoblui-works/site-web:latest .
           docker push ghcr.io/jakoblui-works/site-web:${{ github.sha }}
           docker push ghcr.io/jakoblui-works/site-web:latest
   build-storybook:
@@ -41,8 +46,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build and push
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          docker build -f Dockerfile.storybook -t ghcr.io/jakoblui-works/site-web-storybook:${{ github.sha }} -t ghcr.io/jakoblui-works/site-web-storybook:latest .
+          docker build -f Dockerfile.storybook --secret id=npm_token,env=NODE_AUTH_TOKEN -t ghcr.io/jakoblui-works/site-web-storybook:${{ github.sha }} -t ghcr.io/jakoblui-works/site-web-storybook:latest .
           docker push ghcr.io/jakoblui-works/site-web-storybook:${{ github.sha }}
           docker push ghcr.io/jakoblui-works/site-web-storybook:latest
   trigger-deploy:

@@ -104,10 +104,14 @@ const markReady = (masks: { window: string; rim: string }) => {
   );
 };
 
+// The header's items, which stand on solid frost: the shared header's logo, and anything of site-web's
+// own marked `data-xray-solid` (the work menu).
+const SOLID = '[data-slot="site-logo"], [data-xray-solid]';
+
 /**
  * Publishes the x-ray's window (see `styles.css`). On the root: the graph's clear area (see
  * `.xray-content`), the screen's size and the window's masks, drawn around the clear area, the hero
- * (`data-xray-cover`), the header and its items (`data-xray-solid`), all inside the surface. While `settled`, the rim's offset
+ * (`data-xray-cover`), the header and its items (`SOLID`), all inside the surface. While `settled`, the rim's offset
  * into the surface too, for its mask (it may be scrolled; scrolling is locked while open). Follows
  * the screen's size and the hero's.
  */
@@ -140,7 +144,7 @@ export const useXrayWindow = (surfaceRef: RefObject<HTMLElement | null>, settled
         hero: hero ? contentBox(hero) : { left: vw, top: vh, right: 0, bottom: 0 },
         header: surface.querySelector("header")?.offsetHeight ?? 0,
         // What's laid out of them (a label kept only for screen readers isn't).
-        solid: [...surface.querySelectorAll("[data-xray-solid]")]
+        solid: [...surface.querySelectorAll(SOLID)]
           .map((item) => item.getBoundingClientRect())
           .filter((box) => box.width > 1 && box.height > 1),
       });
@@ -164,7 +168,7 @@ export const useXrayWindow = (surfaceRef: RefObject<HTMLElement | null>, settled
     // until the first settle, whose new masks Firefox then loaded mid-animation (a flash).
     const observer = new ResizeObserver(place);
     if (hero) observer.observe(hero);
-    surface?.querySelectorAll("[data-xray-solid]").forEach((item) => observer.observe(item));
+    surface?.querySelectorAll(SOLID).forEach((item) => observer.observe(item));
     return () => {
       window.removeEventListener("resize", place);
       observer.disconnect();

@@ -5,7 +5,7 @@ import { z } from "zod";
 import { Hero } from "@/components/hero";
 import { FrostedGraph } from "@/components/frosted-graph";
 import { InfraOutline } from "@/components/infra-outline";
-import { SiteHeader } from "@/components/site-header";
+import { HubHeader } from "@/components/hub-header";
 import { Xray } from "@/components/xray";
 import { useXrayWindow } from "@/hooks/use-xray-window";
 import { graphs, type GraphId } from "@/lib/graphs";
@@ -79,7 +79,7 @@ const HomeComponent = () => {
           <div aria-hidden className="xray-surface-bg absolute inset-0 -z-10">
             <FrostedGraph graphId={view} open={isOpen} />
           </div>
-          <SiteHeader />
+          <HubHeader />
           <main>
             <Hero
               panelRef={panelRef}

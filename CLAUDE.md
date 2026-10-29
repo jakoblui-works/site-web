@@ -31,7 +31,8 @@ React 19, Vite, TanStack Router (file routes in `src/routes`; `routeTree.gen.ts`
   - `infra-graph.tsx`: draws a graph.
   - `xray.tsx`: the interior, with camera, zoom and gestures.
   - `frosted-graph.tsx`: the blurred copies behind the surface and in the look-inside panel.
-  - `hero.tsx`, `site-header.tsx`, `work-menu.tsx`, `site-switcher.tsx`
+  - `hero.tsx`, `work-menu.tsx`
+  - `hub-header.tsx`: the shared header (`@jakoblui-works/shared-ui`) as the hub shows it, with the work menu; used by the home page and the 404 page.
   - `infra-outline.tsx`: the x-ray as hidden text.
   - `not-found.tsx`
   - `og-card.tsx`: the og:image.
@@ -55,3 +56,4 @@ React 19, Vite, TanStack Router (file routes in `src/routes`; `routeTree.gen.ts`
 - **nginx caching:** `/assets/` is cached for a year as `immutable`, so anything served from there must have a content hash in its name. Everything else is `no-cache`. Keep everything in the one `location /`, because a nested location's `add_header` drops the CORS header Storybook's composition needs.
 - **Deploys build two images** (`site-web` and `site-web-storybook`) that share `nginx.conf`; storybook-host composes the Storybook. CI runs lint and tests but not `pnpm build`, so a prerender error only shows in the deploy's Docker build.
 - **Repo-root `robots.txt`** is Storybook's (disallow all). The site's is `public/robots.txt`.
+- **The header, site switcher and shared theme tokens come from `@jakoblui-works/shared-ui`** (GitHub Packages). Installing needs a token with `read:packages`, even though the package is public (see shared-ui's `CLAUDE.md`). CI uses `GITHUB_TOKEN`, and the Docker builds take it as `--secret id=npm_token,env=NODE_AUTH_TOKEN`. `styles.css` keeps only site-web's palette and x-ray CSS; the fonts are the shared theme's, which are site-web's. If `shadcn add` writes tokens into it, move the shared ones into shared-ui. Over the open x-ray, `useXrayWindow` finds the logo by the package's `data-slot="site-logo"`.
