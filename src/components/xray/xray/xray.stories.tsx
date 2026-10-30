@@ -66,12 +66,18 @@ export const ZoomsOutOnScroll: Story = {
   args: { selected: "api" },
   play: async ({ args, canvas }) => {
     const heading = await canvas.findByRole("heading", { name: /^api/ });
-    await waitFor(() => expect(heading).toBeVisible(), { timeout: 2000 });
+    // The zoom's end moves focus to the internals. Until then a scroll would skip the wait below,
+    // so how far the zoom has got must not decide what this story checks.
+    await waitFor(() => expect(document.activeElement).toContainElement(heading), { timeout: 3000 });
+    const interior = document.activeElement as HTMLElement;
 
-    // Scrolling up doesn't leave; scrolling down zooms back out of the node.
+    // Scrolling up doesn't leave.
     const region = canvas.getByRole("region", { name: "Infrastructure" });
     region.dispatchEvent(new WheelEvent("wheel", { deltaY: -400, bubbles: true, cancelable: true }));
     await expect(args.onSelect).not.toHaveBeenCalled();
+
+    // Long internals scroll to their end first; from there, scrolling down zooms out of the node.
+    interior.scrollTop = interior.scrollHeight;
     region.dispatchEvent(new WheelEvent("wheel", { deltaY: 400, bubbles: true, cancelable: true }));
     await expect(args.onSelect).toHaveBeenCalledWith(null);
   },
