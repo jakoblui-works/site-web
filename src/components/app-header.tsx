@@ -6,7 +6,7 @@ import { projects } from "@/lib/projects";
 
 // The shared header as the hub shows it, on the home page and the 404 page. Over the open x-ray,
 // its logo (`data-slot="site-logo"`) and the work menu stand on solid frost (see `useXrayWindow`).
-export const HubHeader = () => {
+export const AppHeader = () => {
   return (
     <SiteHeader current="www" homeLink={<Link to="/" />}>
       <WorkMenu projects={projects} />

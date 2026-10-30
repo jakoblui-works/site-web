@@ -3,7 +3,7 @@
 @import "shadcn/tailwind.css";
 @import "@jakoblui-works/shared-ui/theme.css";
 
-/* Brand colour: change the palette name here (violet → purple, …) to rebrand. The site is dark-only, so 400 is the one in use (see --primary in .dark). */
+/* Brand colour: change the palette name here (violet → …) to rebrand. Light mode uses 700, dark mode 400 (see --primary in shared-ui's theme.css). */
 @theme {
   --color-primary-50: var(--color-violet-50);
   --color-primary-100: var(--color-violet-100);
@@ -17,6 +17,8 @@
   --color-primary-900: var(--color-violet-900);
   --color-primary-950: var(--color-violet-950);
 }
+
+/* The app's own CSS goes below, a line away from the template's. */
 
 /* X-ray: the interior is fixed on top of the page (the surface: header and hero) and seen through a
    window: frosted glass that turns into clear glass over a short band (`BAND`), transparent where

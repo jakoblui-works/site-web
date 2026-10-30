@@ -16,10 +16,14 @@ if (!template.includes(placeholder)) {
   process.exit(1);
 }
 
+// The title is HTML-escaped where it goes into `index.html`, so it is here too.
+const notFoundTitle = "Page not found - Jakob Lui - Product Engineer";
+
 /** The 404 page's head: its own title, without the home page's description, canonical and previews. */
 const notFoundHead = (html) =>
   html
-    .replace(/<title>.*<\/title>/, "<title>Page not found - Jakob Lui</title>")
+    // A function, so `$` in the title isn't read as a replacement pattern.
+    .replace(/<title>.*<\/title>/, () => `<title>${notFoundTitle}</title>`)
     .replace(/<meta\s+(?:name="description"|property="og:[^"]*"|name="twitter:[^"]*")[^>]*>\s*/g, "")
     .replace(/<link rel="canonical"[^>]*>\s*/, "")
     .replace(/<!--[\s\S]*?-->\s*/g, "");
@@ -30,8 +34,7 @@ const pages = [
   { url: "/404", file: "404.html", head: notFoundHead },
 ];
 
-// Marked with its URL: the app hydrates it there and replaces it anywhere else (`main.tsx`), and
-// it's hidden on `?xray` links until then (`[data-prerendered]` in styles.css).
+// Marked with its URL: the app hydrates it there and replaces it anywhere else (`main.tsx`).
 for (const { url, file, head } of pages) {
   const html = await render(url);
   await writeFile(

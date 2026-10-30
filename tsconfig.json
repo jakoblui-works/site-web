@@ -8,8 +8,7 @@
     "lib": ["DOM", "DOM.Iterable", "ES2022"],
     "skipLibCheck": true,
     "paths": {
-      "@/*": ["./src/*"],
-      "*": ["./*"]
+      "@/*": ["./src/*"]
     },
     "types": ["@testing-library/jest-dom/vitest"]
   },
