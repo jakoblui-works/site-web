@@ -5,8 +5,8 @@ import { notFoundGraph } from "@/lib/graphs/not-found";
 import type { GraphLayout } from "@/lib/infra-graph";
 import { cn } from "@/lib/utils";
 
-import { TailArrow } from "./hero";
-import { InfraGraph } from "./infra-graph";
+import { TailArrow } from "@/components/hero/hero";
+import { InfraGraph } from "@/components/xray/infra-graph/infra-graph";
 
 /** How far the dead end runs out of Traefik before it stops, and the size of its cross. */
 const DEAD_END = 115;

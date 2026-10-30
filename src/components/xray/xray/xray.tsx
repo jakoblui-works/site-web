@@ -9,12 +9,6 @@ import {
 import { flushSync } from "react-dom";
 
 import { Button } from "@/components/ui/button";
-import {
-  SNAPSHOTS,
-  SnapshotLayer,
-  useZoomSnapshots,
-  type Snapshot,
-} from "@/hooks/use-zoom-snapshots";
 import { graphs, type GraphId } from "@/lib/graphs";
 import { isZoomTarget } from "@/lib/infra-graph";
 import { measureStage } from "@/lib/stage";
@@ -39,11 +33,18 @@ import {
   type ZoomPlan,
 } from "@/lib/zoom";
 
-import { InfraGraph } from "./infra-graph";
-import { NodeInterior } from "./node-interior";
-import { TraceLabels } from "./trace-labels";
-import { ViewSwitch } from "./view-switch";
-import type { ZoomFrameProps } from "./zoom-content";
+import { InfraGraph } from "@/components/xray/infra-graph/infra-graph";
+import { NodeInterior } from "@/components/xray/node-interior/node-interior";
+import { TraceLabels } from "@/components/xray/trace-labels/trace-labels";
+import { ViewSwitch } from "@/components/xray/view-switch/view-switch";
+import type { ZoomFrameProps } from "@/components/xray/zoom-content/zoom-content";
+
+import {
+  SNAPSHOTS,
+  SnapshotLayer,
+  useZoomSnapshots,
+  type Snapshot,
+} from "./use-zoom-snapshots";
 
 /** Wide screens show the landscape graph (Tailwind's `lg`). */
 const WIDE = 1024;

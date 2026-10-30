@@ -6,7 +6,7 @@ import { graphs } from "@/lib/graphs";
 import { Xray } from "./xray";
 
 const meta: Meta<typeof Xray> = {
-  title: "Components/Xray",
+  title: "Xray/Xray",
   component: Xray,
   args: { open: true, graphId: "runtime", onGraphChange: fn(), selected: null, parent: null, onSelect: fn(), onClose: fn() },
   parameters: { layout: "fullscreen" },

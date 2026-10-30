@@ -1,6 +1,6 @@
 import { graphs } from "@/lib/graphs";
 
-import { InfraGraph } from "./infra-graph";
+import { InfraGraph } from "@/components/xray/infra-graph/infra-graph";
 
 const runtime = graphs.runtime;
 

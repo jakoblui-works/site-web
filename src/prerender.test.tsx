@@ -38,7 +38,7 @@ describe("render", () => {
   }, 30_000);
 
   afterEach(() => {
-    vi.doUnmock("@/components/hero");
+    vi.doUnmock("@/components/hero/hero");
   });
 
   it.each([
@@ -54,7 +54,7 @@ describe("render", () => {
   });
 
   it("rejects when the page fails to render", async () => {
-    vi.doMock("@/components/hero", async (importOriginal) => ({
+    vi.doMock("@/components/hero/hero", async (importOriginal) => ({
       ...(await importOriginal<object>()),
       Hero: () => {
         throw new Error("boom");

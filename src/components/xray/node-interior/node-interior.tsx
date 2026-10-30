@@ -10,7 +10,7 @@ import {
   ZoomContent,
   ZoomHeader,
   type ZoomFrameProps,
-} from "./zoom-content";
+} from "@/components/xray/zoom-content/zoom-content";
 
 /**
  * The inside of a node, seen once the camera has zoomed into it: no outline or background of its

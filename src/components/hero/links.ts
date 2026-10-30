@@ -1,6 +1,6 @@
 import { type ComponentType, type SVGProps } from "react";
 
-import { GitHubIcon, LinkedInIcon } from "@/components/brand-icons";
+import { GitHubIcon, LinkedInIcon } from "@/components/brand-icons/brand-icons";
 
 export type ProfileLink = {
   name: string;

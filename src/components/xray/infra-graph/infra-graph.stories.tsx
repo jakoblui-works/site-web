@@ -10,7 +10,7 @@ const { nodes, traceGroups } = graph;
 const { landscape, portrait } = graph.layouts;
 
 const meta: Meta<typeof InfraGraph> = {
-  title: "Components/InfraGraph",
+  title: "Xray/InfraGraph",
   component: InfraGraph,
   args: { graph },
   parameters: { layout: "padded" },
