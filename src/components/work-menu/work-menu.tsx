@@ -1,6 +1,5 @@
 import { LayoutGridIcon } from "lucide-react";
 
-import { frostedMenuClassName } from "@/components/frosted-menu";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,6 +8,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { type Project } from "@/lib/projects";
 import { cn } from "@/lib/utils";
+
+import { frostedMenuClassName } from "./frosted-menu";
 
 type WorkMenuProps = {
   projects: Project[];

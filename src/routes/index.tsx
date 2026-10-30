@@ -2,11 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 
-import { AppHeader } from "@/components/app-header";
-import { Hero } from "@/components/hero";
-import { FrostedGraph } from "@/components/frosted-graph";
-import { InfraOutline } from "@/components/infra-outline";
-import { Xray } from "@/components/xray";
+import { AppHeader } from "@/components/app-header/app-header";
+import { Hero } from "@/components/hero/hero";
+import { FrostedGraph } from "@/components/xray/frosted-graph/frosted-graph";
+import { InfraOutline } from "@/components/xray/infra-outline/infra-outline";
+import { Xray } from "@/components/xray/xray/xray";
 import { useXrayWindow } from "@/hooks/use-xray-window";
 import { graphs, type GraphId } from "@/lib/graphs";
 import { isZoomTarget } from "@/lib/infra-graph";

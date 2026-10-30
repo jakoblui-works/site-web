@@ -5,8 +5,8 @@ import type { GraphLayout } from "@/lib/infra-graph";
 import { averageBackground, rasterize, svgToImageUrl } from "@/lib/svg-image";
 import { fitScale } from "@/lib/zoom";
 
-import { InfraGraph } from "./infra-graph";
-import { ViewSwitch } from "./view-switch";
+import { InfraGraph } from "@/components/xray/infra-graph/infra-graph";
+import { ViewSwitch } from "@/components/xray/view-switch/view-switch";
 
 /** The canvas is drawn at this fraction of the screen's size and scaled up: blurred, it needs no more. */
 const SCALE = 1 / 4;

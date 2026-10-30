@@ -1,9 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn } from "storybook/test";
 
-import { cvUrl, profileLinks } from "@/lib/links";
-
 import { Hero } from "./hero";
+import { cvUrl, profileLinks } from "./links";
 
 const meta: Meta<typeof Hero> = {
   title: "Components/Hero",

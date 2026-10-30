@@ -19,7 +19,7 @@ import {
 import { NEAR_TRACE, nearestTraceGroup, nodesOf } from "@/lib/trace-groups";
 import { cn } from "@/lib/utils";
 
-import { InfraLogo } from "./infra-logos";
+import { InfraLogo } from "@/components/xray/infra-logos/infra-logos";
 
 /** Gap between a trace's arrowhead and the node it points at. */
 const EDGE_GAP = 6;

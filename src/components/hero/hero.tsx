@@ -2,10 +2,10 @@ import { ArrowRightIcon, MapPinIcon } from "lucide-react";
 import { type Ref } from "react";
 
 import { buttonVariants } from "@/components/ui/button";
+import { LookInsidePanel } from "@/components/xray/look-inside-panel/look-inside-panel";
 import { cn } from "@/lib/utils";
-import { cvUrl, profileLinks } from "@/lib/links";
 
-import { LookInsidePanel } from "./look-inside-panel";
+import { cvUrl, profileLinks } from "./links";
 
 type HeroProps = {
   onLookInside: () => void;

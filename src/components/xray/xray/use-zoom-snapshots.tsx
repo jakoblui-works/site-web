@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
 
-import { InfraGraph } from "@/components/infra-graph";
+import { InfraGraph } from "@/components/xray/infra-graph/infra-graph";
 import type { GraphId } from "@/lib/graphs";
 import type { Graph, GraphLayout, Rect } from "@/lib/infra-graph";
 import { measureStage } from "@/lib/stage";

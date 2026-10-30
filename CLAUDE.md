@@ -29,16 +29,13 @@ React 19, Vite, TanStack Router (file routes in `src/routes`; `routeTree.gen.ts`
 - `src/routes/__root.tsx`: the root layout; wires the 404 page (`notFoundComponent`).
 - `src/lib/graphs/`: the graphs as data (`Graph`: nodes, edges, layouts, node details, trace groups). There's one per view (`runtime`, `deploy`) plus the 404 page's small one (`not-found`). Positions are hand-placed per layout (landscape and portrait) on the `GRID`.
 - `src/lib/`: everything about graphs that isn't rendering: trace routing (`infra-graph.ts`), zoom planning (`zoom.ts`), trace groups and hover picking (`trace-groups.ts`), and the x-ray window's shape (`xray-window.ts`). Most tests live here and run once per graph.
-- `src/components/`:
-  - `infra-graph.tsx`: draws a graph.
-  - `xray.tsx`: the interior, with camera, zoom and gestures.
-  - `frosted-graph.tsx`: the blurred copies behind the surface and in the look-inside panel.
-  - `hero.tsx`, `work-menu.tsx`
-  - `app-header.tsx`: the shared header (`@jakoblui-works/shared-ui`) as the hub shows it, with the work menu; used by the home page and the 404 page.
-  - `infra-outline.tsx`: the x-ray as hidden text.
-  - `not-found.tsx`: the 404 page's picture and text; `not-found-page.tsx` adds the header and the frost around it.
-  - `og-card.tsx`: the og:image.
-- `src/hooks/`: `useXrayWindow` (bakes the window's masks) and `useZoomSnapshots` (Firefox's bitmap snapshots while zooming).
+- `src/components/`: one folder per component with its stories, tests and single-use helpers, files named after it (no `index.tsx`, no barrels); the stories' titles follow the folders. `ui/` stays flat, since the shadcn CLI expects it.
+  - `xray/`: the x-ray's pieces. `infra-graph/` draws a graph; `xray/` is the interior, with camera, zoom and gestures; `frosted-graph/` the blurred copies behind the surface and in the look-inside panel; `infra-outline/` the x-ray as hidden text.
+  - `hero/`, `work-menu/`, `brand-icons/`
+  - `app-header/`: the shared header (`@jakoblui-works/shared-ui`) as the hub shows it, with the work menu; used by the home page and the 404 page.
+  - `not-found/`: the 404 page's picture and text; `not-found-page/` adds the header and the frost around it.
+  - `og-card/`: the og:image.
+- `src/hooks/`: `useXrayWindow` (bakes the window's masks). `useZoomSnapshots` (Firefox's bitmap snapshots while zooming) lives in `components/xray/xray/`.
 - `src/styles.css`: theme tokens and the x-ray's layering, window and grain (commented in place).
 - `src/prerender.tsx` + `scripts/prerender.mjs`: prerendering (below). `src/router.tsx`: the router, shared by it and `main.tsx`.
 
