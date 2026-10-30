@@ -15,16 +15,18 @@ pnpm test              # Vitest: unit tests (jsdom) + Storybook stories in a Pla
 pnpm build             # vite build, prerender (see below), tsc --noEmit
 pnpm preview           # serves dist/ (prerendered, but without nginx's 404 handling)
 pnpm storybook         # :6006
-pnpm icons             # favicon.ico + apple-touch-icon.png from public/icon.svg
 pnpm og                # public/og.png from the OgCard story (needs Storybook running)
 ```
+
+## Template
+Made from `web-template` (`.copier-answers.yml`). Template changes arrive through `copier update --trust`; don't edit the answers by hand. site-web's own additions to template files: the `theme-color`, `og:image` lines and `data-xray-link` script in `index.html`, the `data-xray-link` condition in `main.tsx`, everything below the template's line in `styles.css`, `simple-icons` and the `og` script in `package.json`, the `ResizeObserver` and `document.fonts` stubs in `test-setup.ts`. The favicons come from the template (`pnpm icons` lives in the template repo).
 
 ## Stack
 React 19, Vite, TanStack Router (file routes in `src/routes`; `routeTree.gen.ts` is generated), Tailwind 4, shadcn on Base UI (`src/components/ui`), zod, Storybook 10, Vitest. Same template as cv-web. Served by nginx (`nginx.conf`).
 
 ## Layout
 - `src/routes/index.tsx`: the home page. The x-ray state lives in the URL: `?xray` opens it, `?xray=<node or trace group>` zooms in, `&group=` is the group a node was entered from, and `&view=deploy` switches graphs.
-- `src/routes/__root.tsx`: the root layout and the 404 page (`notFoundComponent`).
+- `src/routes/__root.tsx`: the root layout; wires the 404 page (`notFoundComponent`).
 - `src/lib/graphs/`: the graphs as data (`Graph`: nodes, edges, layouts, node details, trace groups). There's one per view (`runtime`, `deploy`) plus the 404 page's small one (`not-found`). Positions are hand-placed per layout (landscape and portrait) on the `GRID`.
 - `src/lib/`: everything about graphs that isn't rendering: trace routing (`infra-graph.ts`), zoom planning (`zoom.ts`), trace groups and hover picking (`trace-groups.ts`), and the x-ray window's shape (`xray-window.ts`). Most tests live here and run once per graph.
 - `src/components/`:
@@ -32,9 +34,9 @@ React 19, Vite, TanStack Router (file routes in `src/routes`; `routeTree.gen.ts`
   - `xray.tsx`: the interior, with camera, zoom and gestures.
   - `frosted-graph.tsx`: the blurred copies behind the surface and in the look-inside panel.
   - `hero.tsx`, `work-menu.tsx`
-  - `hub-header.tsx`: the shared header (`@jakoblui-works/shared-ui`) as the hub shows it, with the work menu; used by the home page and the 404 page.
+  - `app-header.tsx`: the shared header (`@jakoblui-works/shared-ui`) as the hub shows it, with the work menu; used by the home page and the 404 page.
   - `infra-outline.tsx`: the x-ray as hidden text.
-  - `not-found.tsx`
+  - `not-found.tsx`: the 404 page's picture and text; `not-found-page.tsx` adds the header and the frost around it.
   - `og-card.tsx`: the og:image.
 - `src/hooks/`: `useXrayWindow` (bakes the window's masks) and `useZoomSnapshots` (Firefox's bitmap snapshots while zooming).
 - `src/styles.css`: theme tokens and the x-ray's layering, window and grain (commented in place).
@@ -53,7 +55,7 @@ React 19, Vite, TanStack Router (file routes in `src/routes`; `routeTree.gen.ts`
 - **Graph layout tests:** a layout change has to pass `infra-graph.test.ts`. It checks that every node is placed, casing membership, no overlaps, and no trace running through a node it doesn't connect. It doesn't check traces against the casing label.
 - **Firefox:** zooming uses bitmap snapshots instead of the live SVG (it rasterizes SVG on the CPU at every scale). Check zoom changes in Firefox as well as Chrome.
 - **Mask images in Firefox:** Firefox decodes a mask image only once an element is drawn with it, and until then leaves the element out or draws it unmasked. So don't set new mask URLs, or switch an element to a mask it hasn't drawn yet, during a transition. The x-ray keeps each mask drawn ahead of its use (see the x-ray block in `styles.css` and `useXrayWindow`). Headless Firefox doesn't show these one-frame flashes; a Firefox Profiler recording with screenshots does.
-- **nginx caching:** `/assets/` is cached for a year as `immutable`, so anything served from there must have a content hash in its name. Everything else is `no-cache`. Keep everything in the one `location /`, because a nested location's `add_header` drops the CORS header Storybook's composition needs.
-- **Deploys build two images** (`site-web` and `site-web-storybook`) that share `nginx.conf`; storybook-host composes the Storybook. CI runs lint and tests but not `pnpm build`, so a prerender error only shows in the deploy's Docker build.
+- **nginx caching:** `/assets/` is cached for a year as `immutable`, so anything served from there must have a content hash in its name. Everything else is `no-cache`. Keep everything in the one `location /`, because a nested location's `add_header` drops the `Cache-Control` one (in `nginx.storybook.conf`, the CORS headers Storybook's composition needs).
+- **Deploys build two images** (`site-web` and `site-web-storybook`) with their own nginx files (`nginx.conf`, `nginx.storybook.conf`); storybook-host composes the Storybook. CI runs both builds too, so a prerender error fails the pull request.
 - **Repo-root `robots.txt`** is Storybook's (disallow all). The site's is `public/robots.txt`.
 - **The header, site switcher and shared theme tokens come from `@jakoblui-works/shared-ui`** (GitHub Packages). Installing needs a token with `read:packages`, even though the package is public (see shared-ui's `CLAUDE.md`). CI uses `GITHUB_TOKEN`, and the Docker builds take it as `--secret id=npm_token,env=NODE_AUTH_TOKEN`. `styles.css` keeps only site-web's palette and x-ray CSS; the fonts are the shared theme's, which are site-web's. If `shadcn add` writes tokens into it, move the shared ones into shared-ui. Over the open x-ray, `useXrayWindow` finds the logo by the package's `data-slot="site-logo"`.

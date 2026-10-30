@@ -2,10 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 
+import { AppHeader } from "@/components/app-header";
 import { Hero } from "@/components/hero";
 import { FrostedGraph } from "@/components/frosted-graph";
 import { InfraOutline } from "@/components/infra-outline";
-import { HubHeader } from "@/components/hub-header";
 import { Xray } from "@/components/xray";
 import { useXrayWindow } from "@/hooks/use-xray-window";
 import { graphs, type GraphId } from "@/lib/graphs";
@@ -79,7 +79,7 @@ const HomeComponent = () => {
           <div aria-hidden className="xray-surface-bg absolute inset-0 -z-10">
             <FrostedGraph graphId={view} open={isOpen} />
           </div>
-          <HubHeader />
+          <AppHeader />
           <main>
             <Hero
               panelRef={panelRef}
