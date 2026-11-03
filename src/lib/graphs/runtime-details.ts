@@ -55,8 +55,24 @@ export const runtimeDetails: Record<string, NodeDetails> = {
     ],
     links: [repo("cv-web"), { label: "Live", url: "https://cv.jakoblui.com" }, storybook],
   },
+  "ats-web": {
+    summary:
+      "The ATS check: it shows what a simple ATS might pick out of a CV, read by a Python parser running in your browser.",
+    stack: ["React 19", "Vite", "Pyodide", "Web Worker", "pdfminer.six"],
+    decisions: [
+      "The CV is parsed in your browser, so it never leaves your device and no server ever holds one.",
+      "A Content-Security-Policy lets the page talk only to its own origin, so the browser enforces that, not just a code review.",
+      "The parser is a released ats-parser wheel, pinned by its sha256 and served by the site itself, with Pyodide: no CDN sees a visitor.",
+    ],
+    links: [
+      repo("ats-web"),
+      { label: "Parser", url: "https://github.com/jakoblui-works/ats-parser" },
+      { label: "Live", url: "https://ats.jakoblui.com" },
+      storybook,
+    ],
+  },
   storybook: {
-    summary: "One Storybook that composes the component libraries of site-web, cv-web and shared-ui.",
+    summary: "One Storybook that composes the component libraries of site-web, cv-web, ats-web and shared-ui.",
     stack: ["Storybook 10", "nginx"],
     decisions: [
       "Each frontend builds its own Storybook image on deploy, and shared-ui on each version tag; storybook-host composes them.",

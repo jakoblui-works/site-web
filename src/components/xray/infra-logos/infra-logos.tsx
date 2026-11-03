@@ -25,6 +25,7 @@ import {
   siTerraform,
   siTraefikproxy,
   siVite,
+  siWebassembly,
   type SimpleIcon,
 } from "simple-icons";
 
@@ -42,6 +43,7 @@ const logos: Record<LogoId, Logo> = {
   traefik: brand(siTraefikproxy),
   react: brand(siReact),
   vite: brand(siVite),
+  webassembly: brand(siWebassembly),
   storybook: brand(siStorybook),
   fastapi: brand(siFastapi),
   openapi: brand(siOpenapiinitiative),

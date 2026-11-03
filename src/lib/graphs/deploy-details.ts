@@ -19,7 +19,7 @@ export const deployDetails: Record<string, NodeDetails> = {
   },
   repos: {
     summary:
-      "One repo per deployable: api, cv-service, cv-web, site-web, storybook-host and shared-ui (the header and theme the sites share, as a package). All public; infra, which deploys them, is private.",
+      "One repo per deployable: api, cv-service, cv-web, site-web, ats-web, storybook-host, plus shared-ui (the header and theme the sites share, as a package) and ats-parser (the ATS check's parser, as a Python wheel). All public; infra, which deploys them, is private.",
     stack: ["GitHub"],
     decisions: [
       "Public on purpose: no secrets in code or images; they live in an Ansible vault in the private infra repo.",
@@ -34,6 +34,7 @@ export const deployDetails: Record<string, NodeDetails> = {
       "The deploy workflow calls the CI workflow first, so nothing ships that wouldn't pass a pull request.",
       "cv-web regenerates its API client from the production spec, and CI fails if it drifts.",
       "shared-ui publishes on a version tag rather than on a push to main: the package to GitHub Packages, its Storybook image to GHCR. An app picks up a new version with a commit that bumps it.",
+      "ats-parser releases its wheel and JSON schema on a version tag too. ats-web's build fetches them, and Pyodide, against pinned sha256s and serves them itself.",
       "The frontends install the package from GitHub Packages with the workflow's own token, which reaches the Docker builds as a build secret, so it never lands in an image.",
     ],
     links: [],

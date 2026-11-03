@@ -12,6 +12,11 @@ export const projects: Project[] = [
     description: "Pick a title and skills, get a tailored PDF.",
   },
   {
+    name: "ATS check",
+    url: "https://ats.jakoblui.com",
+    description: "See what a simple ATS reads from your CV, in your browser.",
+  },
+  {
     name: "persona",
     url: "https://persona.zip",
     description: "Online gallery for persona's art projects.",
