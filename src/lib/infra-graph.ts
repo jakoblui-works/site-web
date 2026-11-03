@@ -15,6 +15,7 @@ export type LogoId =
   | "traefik"
   | "react"
   | "vite"
+  | "webassembly"
   | "storybook"
   | "fastapi"
   | "openapi"

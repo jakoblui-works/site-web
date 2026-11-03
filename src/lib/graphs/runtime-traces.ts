@@ -16,11 +16,12 @@ export const runtimeTraceGroups: TraceGroup[] = [
   {
     id: "routing",
     title: "Routing",
-    path: "Traefik → site-web, cv-web, Storybook, api",
-    edges: ["traefik->site-web", "traefik->cv-web", "traefik->storybook", "traefik->api"],
+    path: "Traefik → site-web, cv-web, ats-web, Storybook, api",
+    edges: ["traefik->site-web", "traefik->cv-web", "traefik->ats-web", "traefik->storybook", "traefik->api"],
     labels: {
       "traefik->site-web": ["jakoblui.com", "static files, nginx"],
       "traefik->cv-web": ["cv.jakoblui.com", "a frontend per project"],
+      "traefik->ats-web": ["ats.jakoblui.com", "parses CVs in your browser"],
       "traefik->storybook": ["Storybook subdomain", "every library's stories"],
       "traefik->api": ["/api routes", "rate-limited here, at the edge"],
     },
