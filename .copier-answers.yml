@@ -1,7 +1,8 @@
 # Changes here will be overwritten by Copier; never edit by hand.
-_commit: v0.2.1
+_commit: v0.4.0
 _src_path: gh:jakoblui-works/web-template
 app_name: site-web
+csp: ''
 description: I build products end to end, from interface to infrastructure. Half the
     job is knowing what not to build.
 host: jakoblui.com

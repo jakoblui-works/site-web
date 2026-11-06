@@ -36,13 +36,10 @@ const pages = [
 
 // Marked with its URL: the app hydrates it there and replaces it anywhere else (`main.tsx`).
 for (const { url, file, head } of pages) {
-  const html = await render(url);
-  await writeFile(
-    path.join(dist, file),
-    head(template).replace(
-      placeholder,
-      `<div id="app"><div data-prerendered="${url}">${html}</div></div>`,
-    ),
+  const page = head(template).replace(
+    placeholder,
+    `<div id="app"><div data-prerendered="${url}">${await render(url)}</div></div>`,
   );
+  await writeFile(path.join(dist, file), page);
 }
 await rm(ssrDir, { recursive: true });

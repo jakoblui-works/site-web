@@ -19,7 +19,7 @@ pnpm og                # public/og.png from the OgCard story (needs Storybook ru
 ```
 
 ## Template
-Made from `web-template` (`.copier-answers.yml`). Template changes arrive through `copier update --trust`; don't edit the answers by hand. site-web's own additions to template files: the `theme-color`, `og:image` lines and `data-xray-link` script in `index.html`, the `data-xray-link` condition in `main.tsx`, everything below the template's line in `styles.css`, `simple-icons` and the `og` script in `package.json`, the `ResizeObserver` and `document.fonts` stubs in `test-setup.ts`. The favicons come from the template (`pnpm icons` lives in the template repo).
+Made from `web-template` (`.copier-answers.yml`). Template changes arrive through `copier update --trust`; don't edit the answers by hand. site-web's own additions to template files: the `theme-color`, `og:image` lines and `data-xray-link` script in `index.html`, the `data-xray-link` condition in `main.tsx`, everything below the template's line in `styles.css`, `simple-icons` and the `og` script in `package.json`, the `ResizeObserver` and `document.fonts` stubs in `test-setup.ts`. The favicons come from the template: `public/icon.svg` (the dot in the brand colour), rendered to `favicon.ico` and `apple-touch-icon.png` by `scripts/icons-plugin.mjs` in each build.
 
 ## Stack
 React 19, Vite, TanStack Router (file routes in `src/routes`; `routeTree.gen.ts` is generated), Tailwind 4, shadcn on Base UI (`src/components/ui`), zod, Storybook 10, Vitest. Same template as cv-web. Served by nginx (`nginx.conf`).
