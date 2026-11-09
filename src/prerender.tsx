@@ -1,7 +1,9 @@
 // Pages as HTML, built with `vite build --ssr` and written into `dist` by `scripts/prerender.mjs`:
 // the home page, so crawlers get its text without running JavaScript, and the 404 page. Rendered
 // with the router's SSR setup, so the page carries the router's state (`<Scripts />` in
-// `__root.tsx`) and the browser can hydrate it (see `main.tsx`).
+// `__root.tsx`) and the browser can hydrate it (see `main.tsx`). Components therefore render in Node
+// (no `window` or `document` while rendering, unless guarded so the first render's markup is the
+// same; effects are fine), and a render error fails the build.
 import { RouterServer, createRequestHandler } from "@tanstack/react-router/ssr/server";
 import { prerender } from "react-dom/static";
 

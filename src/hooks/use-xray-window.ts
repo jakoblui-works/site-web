@@ -113,7 +113,8 @@ const SOLID = '[data-slot="site-logo"], [data-xray-solid]';
  * `.xray-content`), the screen's size and the window's masks, drawn around the clear area, the hero
  * (`data-xray-cover`), the header and its items (`SOLID`), all inside the surface. While `settled`, the rim's offset
  * into the surface too, for its mask (it may be scrolled; scrolling is locked while open). Follows
- * the screen's size and the hero's.
+ * the screen's size and the hero's. Firefox flashes from masks decoded mid-transition last one
+ * frame and don't show in headless Firefox; a Firefox Profiler recording with screenshots does.
  */
 export const useXrayWindow = (surfaceRef: RefObject<HTMLElement | null>, settled: boolean) => {
   // The shape the masks were last drawn for. Kept across the effect's runs: settling re-runs it, and
